@@ -64,10 +64,10 @@ public class MainActivity extends AppCompatActivity {
     // دالة لفحص نسخ الواتساب المثبتة
     private String getInstalledSupportedPackage() {
         String[] supportedPackages = {
-            "com.abwhatsapp",
-            "com.gbwhatsapp",
+            "com.universe.messenger",
+            "com.nasa",
             "com.whatsapp",
-            "com.yowhatsapp"
+            "com.abdullahtamemi"
         };
 
         PackageManager pm = getPackageManager();
