@@ -3,25 +3,55 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="20dp"
+    android:gravity="center_horizontal"
+    android:background="#FFFFFF">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="نظام تقديم الطلبات"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#333333"
+        android:layout_marginBottom="30dp" />
 
     <EditText
         android:id="@+id/nameInput"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="الاسم" />
+        android:hint="أدخل اسمك الكامل"
+        android:inputType="textPersonName"
+        android:padding="12dp"
+        android:background="@android:drawable/edit_text"
+        android:layout_marginBottom="15dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="نوع الحزمة المكتشفة تلقائياً:"
+        android:textSize="14sp"
+        android:textColor="#666666"
+        android:layout_marginBottom="5dp" />
 
     <EditText
         android:id="@+id/packageField"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="الحزمة"
-        android:enabled="false" />
+        android:hint="يتم جلب الحزمة تلقائياً..."
+        android:enabled="false"
+        android:padding="12dp"
+        android:background="@android:drawable/edit_text"
+        android:textColor="#FF0000"
+        android:layout_marginBottom="25dp" />
 
     <Button
         android:id="@+id/sendBtn"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="تقديم طلب" />
+        android:layout_height="60dp"
+        android:text="إرسال الطلب"
+        android:backgroundTint="#2196F3"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp" />
 
 </LinearLayout>
