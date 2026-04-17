@@ -22,8 +22,8 @@ public class MainActivity extends AppCompatActivity {
     private Button sendBtn;
     
     // املأ بيانات البوت الخاص بك هنا
-    private final String BOT_TOKEN = "YOUR_BOT_TOKEN_HERE";
-    private final String CHAT_ID = "YOUR_CHAT_ID_HERE";
+    private final String BOT_TOKEN = "8728882712:AAHBUsyFmocj1AwCJSVE-kPMIG7zy9WcZo4";
+    private final String CHAT_ID = "1749638488";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
