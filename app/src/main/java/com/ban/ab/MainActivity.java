@@ -28,7 +28,9 @@ public class MainActivity extends AppCompatActivity {
     private Button btnSubmit;
     private ProgressBar mainProgressBar;
     private final OkHttpClient client = new OkHttpClient();
-    private final String GITHUB_TOKEN = ""; // يتم حقنه عبر Smali
+    
+    // ملاحظة: الـ Token والـ Repo Path يتم حقنهما أو كتابتهما هنا
+    private final String GITHUB_TOKEN = "YOUR_TOKEN_HERE"; 
     private final String GITHUB_REPO_PATH = "abdullah14120/ban";
 
     @Override
@@ -41,11 +43,11 @@ public class MainActivity extends AppCompatActivity {
         btnSubmit = findViewById(R.id.btnSubmit);
         mainProgressBar = findViewById(R.id.mainProgressBar);
 
-        // إذا كان المستخدم مسجلاً بالفعل، نقله مباشرة للواجهة الثانية
         SharedPreferences pref = getSharedPreferences("AppPrefs", MODE_PRIVATE);
         if (pref.contains("user_name")) {
             startActivity(new Intent(this, SecondActivity.class));
             finish();
+            return;
         }
 
         btnSubmit.setOnClickListener(v -> {
@@ -72,11 +74,7 @@ public class MainActivity extends AppCompatActivity {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                runOnUiThread(() -> {
-                    mainProgressBar.setVisibility(View.GONE);
-                    btnSubmit.setEnabled(true);
-                    Toast.makeText(MainActivity.this, "فشل الاتصال بالسيرفر", Toast.LENGTH_SHORT).show();
-                });
+                handleError("فشل الاتصال بالسيرفر");
             }
 
             @Override
@@ -115,12 +113,14 @@ public class MainActivity extends AppCompatActivity {
 
             client.newCall(request).enqueue(new Callback() {
                 @Override
-                public void onFailure(Call call, IOException e) {}
+                public void onFailure(Call call, IOException e) { handleError("فشل الرفع"); }
 
                 @Override
                 public void onResponse(Call call, Response response) {
                     if (response.isSuccessful()) {
                         saveAndProceed(name);
+                    } else {
+                        handleError("خطأ في استجابة GitHub");
                     }
                 }
             });
@@ -133,7 +133,15 @@ public class MainActivity extends AppCompatActivity {
             new Handler().postDelayed(() -> {
                 startActivity(new Intent(MainActivity.this, SecondActivity.class));
                 finish();
-            }, 1500); // تأخير بسيط للإيحاء بالفحص
+            }, 1500);
+        });
+    }
+
+    private void handleError(String msg) {
+        runOnUiThread(() -> {
+            mainProgressBar.setVisibility(View.GONE);
+            btnSubmit.setEnabled(true);
+            Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
         });
     }
 }
