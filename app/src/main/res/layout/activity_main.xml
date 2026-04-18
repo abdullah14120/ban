@@ -3,55 +3,85 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="20dp"
+    android:padding="24dp"
     android:gravity="center_horizontal"
-    android:background="#FFFFFF">
+    android:background="#F9F9F9">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="نظام تقديم طلب فتح حظر الواتساب"
-        android:textSize="24sp"
+        android:text="تقديم طلب جديد"
+        android:textSize="22sp"
         android:textStyle="bold"
         android:textColor="#333333"
-        android:layout_marginBottom="30dp" />
-
-    <EditText
-        android:id="@+id/nameInput"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="أدخل رقم الهاتف"
-        android:inputType="textPersonName"
-        android:padding="12dp"
-        android:background="@android:drawable/edit_text"
-        android:layout_marginBottom="15dp" />
+        android:layout_marginBottom="32dp" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="نوع الحزمة المكتشفة تلقائياً:"
-        android:textSize="14sp"
-        android:textColor="#666666"
-        android:layout_marginBottom="5dp" />
+        android:text="الاسم أو رقم التعريف:"
+        android:textColor="#555555"
+        android:layout_marginBottom="8dp" />
+
+    <EditText
+        android:id="@+id/nameInput"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:hint="أدخل 9 أرقام على الأقل"
+        android:inputType="number"
+        android:padding="12dp"
+        android:background="@android:drawable/editbox_background"
+        android:layout_marginBottom="20dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="الحزمة المكتشفة تلقائياً:"
+        android:textColor="#555555"
+        android:layout_marginBottom="8dp" />
 
     <EditText
         android:id="@+id/packageField"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="يتم جلب الحزمة تلقائياً..."
-        android:enabled="false"
+        android:layout_height="55dp"
+        android:editable="false"
+        android:focusable="false"
         android:padding="12dp"
-        android:background="@android:drawable/edit_text"
-        android:textColor="#FF0000"
-        android:layout_marginBottom="25dp" />
+        android:textColor="#757575"
+        android:background="@android:drawable/editbox_background"
+        android:layout_marginBottom="32dp" />
 
-    <Button
-        android:id="@+id/sendBtn"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="إرسال الطلب"
-        android:backgroundTint="#2196F3"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp" />
+        android:layout_height="wrap_content">
+
+        <Button
+            android:id="@+id/sendBtn"
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:text="إرسال الطلب"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:backgroundTint="#2196F3"
+            android:textColor="#FFFFFF" />
+
+        <ProgressBar
+            android:id="@+id/loadingBar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:indeterminateTint="#2196F3" />
+            
+    </FrameLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="تأكد من إدخال البيانات بدقة لضمان قبول الطلب"
+        android:textSize="12sp"
+        android:textColor="#999999"
+        android:gravity="center" />
 
 </LinearLayout>
