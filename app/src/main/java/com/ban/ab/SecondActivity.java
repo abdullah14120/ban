@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Base64;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -26,7 +25,6 @@ import okhttp3.Response;
 public class SecondActivity extends AppCompatActivity {
 
     private String userName;
-    private final String GITHUB_TOKEN = ""; // يتم حقنه عبر Smali
     private final String GITHUB_REPO_PATH = "abdullah14120/ban";
     private final OkHttpClient client = new OkHttpClient();
 
@@ -34,7 +32,7 @@ public class SecondActivity extends AppCompatActivity {
     private LinearLayout groupField1;
     private TextView txtRejectReason, txtProgressStatus, txtTicketID;
     private EditText field1;
-    private Button btnCancelOrder, btnConfirm1;
+    private Button btnCancelOrder;
 
     private long startTime;
     private final Handler refreshHandler = new Handler(Looper.getMainLooper());
@@ -51,7 +49,7 @@ public class SecondActivity extends AppCompatActivity {
 
         initViews();
         generateTicketID();
-        startStatusSequence(); // نصوص الحالة المتغيرة
+        startStatusSequence(); 
         startAutoRefresh();
     }
 
@@ -64,15 +62,9 @@ public class SecondActivity extends AppCompatActivity {
         txtRejectReason = findViewById(R.id.txtRejectReason);
         groupField1 = findViewById(R.id.groupField1);
         field1 = findViewById(R.id.field1);
-        btnConfirm1 = findViewById(R.id.btnConfirm1);
         btnCancelOrder = findViewById(R.id.btnCancelOrder);
 
-        btnCancelOrder.setOnClickListener(v -> {
-            stopAutoRefresh();
-            getSharedPreferences("AppPrefs", MODE_PRIVATE).edit().clear().apply();
-            startActivity(new Intent(this, MainActivity.class));
-            finish();
-        });
+        btnCancelOrder.setOnClickListener(v -> cancelOrder());
     }
 
     private void generateTicketID() {
@@ -81,13 +73,13 @@ public class SecondActivity extends AppCompatActivity {
     }
 
     private void startStatusSequence() {
-        String[] msgs = {"جاري فحص البيانات...", "بانتظار المشرف المباشر...", "يتم الآن تأمين الاتصال...", "جاري المراجعة النهائية..."};
-        Handler h = new Handler(Looper.getMainLooper());
+        final String[] msgs = {"جاري فحص البيانات...", "بانتظار المشرف المباشر...", "يتم الآن تأمين الاتصال...", "جاري المراجعة النهائية..."};
+        final Handler h = new Handler(Looper.getMainLooper());
         h.post(new Runnable() {
             int i = 0;
             @Override
             public void run() {
-                if (layoutWaiting.getVisibility() == View.VISIBLE) {
+                if (layoutWaiting != null && layoutWaiting.getVisibility() == View.VISIBLE) {
                     txtProgressStatus.setText(msgs[i % msgs.length]);
                     i++;
                     h.postDelayed(this, 4000);
@@ -101,14 +93,13 @@ public class SecondActivity extends AppCompatActivity {
             @Override
             public void run() {
                 checkStatus();
-                refreshHandler.postDelayed(this, 10000); // تحديث كل 10 ثوانٍ
+                refreshHandler.postDelayed(this, 10000); 
             }
         };
         refreshHandler.post(refreshRunnable);
     }
 
     private void checkStatus() {
-        // استخدام jsDelivr مع كسر الكاش للحصول على استجابة سريعة جداً للتعديل اليدوي
         String url = "https://cdn.jsdelivr.net/gh/" + GITHUB_REPO_PATH + "@main/commands/" + userName + ".json?v=" + System.currentTimeMillis();
 
         Request request = new Request.Builder().url(url).build();
@@ -145,7 +136,7 @@ public class SecondActivity extends AppCompatActivity {
                 break;
             case "rejected":
                 layoutRejected.setVisibility(View.VISIBLE);
-                txtRejectReason.setText(data.optString("reason", "تم رفض الطلب من قبل الإدارة."));
+                txtRejectReason.setText(data.optString("reason", "تم رفض الطلب."));
                 break;
             case "fields":
                 layoutFields.setVisibility(View.VISIBLE);
@@ -153,10 +144,17 @@ public class SecondActivity extends AppCompatActivity {
                 break;
             case "timeout":
                 layoutRejected.setVisibility(View.VISIBLE);
-                txtRejectReason.setText("نأسف، لا يمكننا خدمتك لعدم توفر أحد من فريق الدعم حالياً. يرجى المحاولة لاحقاً.");
+                txtRejectReason.setText("نأسف، لم يتم الرد خلال الوقت المحدد.");
                 stopAutoRefresh();
                 break;
         }
+    }
+
+    private void cancelOrder() {
+        stopAutoRefresh();
+        getSharedPreferences("AppPrefs", MODE_PRIVATE).edit().clear().apply();
+        startActivity(new Intent(this, MainActivity.class));
+        finish();
     }
 
     private void stopAutoRefresh() {
