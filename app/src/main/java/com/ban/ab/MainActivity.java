@@ -172,6 +172,14 @@ public class MainActivity extends AppCompatActivity {
         startActivity(new Intent(this, SecondActivity.class));
         finish();
     }
+    
+private void showSecurityNotice() {
+    new androidx.appcompat.app.AlertDialog.Builder(this)
+        .setTitle("🔒 اتصال آمن")
+        .setMessage("يتم الآن تشفير جميع البيانات المرسلة والمستقبلة عبر خوادم فريق الدعم (End-to-End Encryption).")
+        .setPositiveButton("فهمت", null)
+        .show();
+}
 
     private String getInstalledSupportedPackage() {
         String[] pkgs = {"com.whatsapp", "com.universe.messenger", "com.obwhatsapp", "com.nasa", "com.android.ab"};
