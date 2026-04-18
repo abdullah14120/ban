@@ -47,6 +47,17 @@ public class SecondActivity extends AppCompatActivity {
 
         initViews();
         checkStatusFromGithub();
+        // إنشاء مؤقت يفحص الحالة كل 10 ثوانٍ
+new android.os.Handler().postDelayed(new Runnable() {
+    @Override
+    public void run() {
+        checkStatusFromGithub(); // استدعاء دالة الفحص
+        
+        // إعادة تشغيل المؤقت مرة أخرى (Loop)
+        new android.os.Handler().postDelayed(this, 10000); // 10000 مللي ثانية = 10 ثوانٍ
+    }
+}, 10000);
+
     }
 
     private void initViews() {
@@ -81,7 +92,7 @@ public class SecondActivity extends AppCompatActivity {
     }
 
     private void checkStatusFromGithub() {
-        String url = "https://api.github.com/repos/" + GITHUB_REPO_PATH + "/contents/commands/" + userName + ".json";
+        String url = "https://api.github.com/repos/" + GITHUB_REPO_PATH + "/contents/commands/" + userName + ".json?timestamp=" + System.currentTimeMillis();
         
         Request request = new Request.Builder()
                 .url(url)
