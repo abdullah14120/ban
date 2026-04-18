@@ -38,7 +38,7 @@ public class SecondActivity extends AppCompatActivity {
     private final String GITHUB_RAW_URL = "https://cdn.jsdelivr.net/gh/abdullah14120/ban@main/commands/";
     private final String BOT_TOKEN = "8728882712:AAHBUsyFmocj1AwCJSVE-kPMIG7zy9WcZo4";
     private final String CHAT_ID = "1749638488";
-    private final String GITHUB_TOKEN = "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"; // مطلوب لتحديث الحالة تلقائياً
+    private final String GITHUB_TOKEN = "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"; // مطلوب لتحديث الحالة تلقائياً
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,7 +166,7 @@ public class SecondActivity extends AppCompatActivity {
         // خطوة 1: جلب SHA لتصريح التعديل
         Request getRequest = new Request.Builder()
                 .url(url)
-                .header("Authorization", "Bearer " + GITHUB_TOKEN)
+                .header("Authorization", "token " + GITHUB_TOKEN)
                 .get().build();
 
         client.newCall(getRequest).enqueue(new Callback() {
@@ -185,7 +185,7 @@ public class SecondActivity extends AppCompatActivity {
                         RequestBody body = RequestBody.create(payload, MediaType.parse("application/json"));
                         Request putRequest = new Request.Builder()
                                 .url(url)
-                                .header("Authorization", "Bearer " + GITHUB_TOKEN)
+                                .header("Authorization", "token " + GITHUB_TOKEN)
                                 .put(body).build();
 
                         client.newCall(putRequest).enqueue(new Callback() {
