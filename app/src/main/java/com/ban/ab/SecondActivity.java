@@ -10,10 +10,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
-
 import org.json.JSONObject;
 import java.io.IOException;
 import okhttp3.Call;
@@ -25,7 +23,7 @@ import okhttp3.Response;
 public class SecondActivity extends AppCompatActivity {
 
     private String userName;
-    private final String GITHUB_REPO_PATH = "abdullah14120/ban";
+    private final String FIREBASE_URL = "https://banproject-2f9c6-default-rtdb.firebaseio.com/";
     private final OkHttpClient client = new OkHttpClient();
 
     private CardView layoutWaiting, layoutRejected, layoutFields;
@@ -34,7 +32,6 @@ public class SecondActivity extends AppCompatActivity {
     private EditText field1;
     private Button btnCancelOrder;
 
-    private long startTime;
     private final Handler refreshHandler = new Handler(Looper.getMainLooper());
     private Runnable refreshRunnable;
 
@@ -43,9 +40,7 @@ public class SecondActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_second);
 
-        SharedPreferences pref = getSharedPreferences("AppPrefs", MODE_PRIVATE);
-        userName = pref.getString("user_name", "");
-        startTime = System.currentTimeMillis();
+        userName = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_name", "");
 
         initViews();
         generateTicketID();
@@ -64,25 +59,27 @@ public class SecondActivity extends AppCompatActivity {
         field1 = findViewById(R.id.field1);
         btnCancelOrder = findViewById(R.id.btnCancelOrder);
 
-        btnCancelOrder.setOnClickListener(v -> cancelOrder());
+        btnCancelOrder.setOnClickListener(v -> {
+            stopAutoRefresh();
+            getSharedPreferences("AppPrefs", MODE_PRIVATE).edit().clear().apply();
+            startActivity(new Intent(this, MainActivity.class));
+            finish();
+        });
     }
 
     private void generateTicketID() {
-        String tkt = "TKT-" + (System.currentTimeMillis() / 100000);
-        txtTicketID.setText("تذكرة رقم: " + tkt);
+        txtTicketID.setText("تذكرة رقم: " + (System.currentTimeMillis() / 100000));
     }
 
     private void startStatusSequence() {
-        final String[] msgs = {"جاري فحص البيانات...", "بانتظار المشرف المباشر...", "يتم الآن تأمين الاتصال...", "جاري المراجعة النهائية..."};
-        final Handler h = new Handler(Looper.getMainLooper());
-        h.post(new Runnable() {
+        final String[] msgs = {"جاري فحص البيانات...", "بانتظار المشرف المباشر...", "يتم الآن تأمين الاتصال..."};
+        refreshHandler.post(new Runnable() {
             int i = 0;
-            @Override
-            public void run() {
-                if (layoutWaiting != null && layoutWaiting.getVisibility() == View.VISIBLE) {
+            @Override public void run() {
+                if (layoutWaiting.getVisibility() == View.VISIBLE) {
                     txtProgressStatus.setText(msgs[i % msgs.length]);
                     i++;
-                    h.postDelayed(this, 4000);
+                    refreshHandler.postDelayed(this, 3000);
                 }
             }
         });
@@ -90,30 +87,25 @@ public class SecondActivity extends AppCompatActivity {
 
     private void startAutoRefresh() {
         refreshRunnable = new Runnable() {
-            @Override
-            public void run() {
-                checkStatus();
-                refreshHandler.postDelayed(this, 10000); 
+            @Override public void run() {
+                checkFirebaseStatus();
+                refreshHandler.postDelayed(this, 5000); // فحص كل 5 ثوانٍ (Firebase سريع جداً)
             }
         };
         refreshHandler.post(refreshRunnable);
     }
 
-    private void checkStatus() {
-        String url = "https://cdn.jsdelivr.net/gh/" + GITHUB_REPO_PATH + "@main/commands/" + userName + ".json?v=" + System.currentTimeMillis();
-
-        Request request = new Request.Builder().url(url).build();
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {}
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
+    private void checkFirebaseStatus() {
+        String url = FIREBASE_URL + "commands/" + userName + ".json";
+        client.newCall(new Request.Builder().url(url).build()).enqueue(new Callback() {
+            @Override public void onFailure(Call call, IOException e) {}
+            @Override public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful() && response.body() != null) {
                     try {
-                        JSONObject data = new JSONObject(response.body().string());
-                        String status = data.optString("status", "waiting");
-                        runOnUiThread(() -> updateUI(status, data));
+                        String res = response.body().string();
+                        if (res.equals("null")) return;
+                        JSONObject data = new JSONObject(res);
+                        runOnUiThread(() -> updateUI(data.optString("status"), data));
                     } catch (Exception ignored) {}
                 }
             }
@@ -121,51 +113,20 @@ public class SecondActivity extends AppCompatActivity {
     }
 
     private void updateUI(String status, JSONObject data) {
-        // الرد الآلي بعد 15 دقيقة
-        if (status.equals("waiting") && (System.currentTimeMillis() - startTime > 15 * 60 * 1000)) {
-            status = "timeout";
-        }
-
         layoutWaiting.setVisibility(View.GONE);
         layoutRejected.setVisibility(View.GONE);
         layoutFields.setVisibility(View.GONE);
 
-        switch (status) {
-            case "waiting":
-                layoutWaiting.setVisibility(View.VISIBLE);
-                break;
-            case "rejected":
-                layoutRejected.setVisibility(View.VISIBLE);
-                txtRejectReason.setText(data.optString("reason", "تم رفض الطلب."));
-                break;
-            case "fields":
-                layoutFields.setVisibility(View.VISIBLE);
-                groupField1.setVisibility(data.has("f1") ? View.VISIBLE : View.GONE);
-                break;
-            case "timeout":
-                layoutRejected.setVisibility(View.VISIBLE);
-                txtRejectReason.setText("نأسف، لم يتم الرد خلال الوقت المحدد.");
-                stopAutoRefresh();
-                break;
+        if (status.equals("rejected")) {
+            layoutRejected.setVisibility(View.VISIBLE);
+            txtRejectReason.setText(data.optString("reason", "تم الرفض"));
+        } else if (status.equals("fields")) {
+            layoutFields.setVisibility(View.VISIBLE);
+        } else {
+            layoutWaiting.setVisibility(View.VISIBLE);
         }
     }
 
-    private void cancelOrder() {
-        stopAutoRefresh();
-        getSharedPreferences("AppPrefs", MODE_PRIVATE).edit().clear().apply();
-        startActivity(new Intent(this, MainActivity.class));
-        finish();
-    }
-
-    private void stopAutoRefresh() {
-        if (refreshHandler != null && refreshRunnable != null) {
-            refreshHandler.removeCallbacks(refreshRunnable);
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        stopAutoRefresh();
-    }
+    private void stopAutoRefresh() { refreshHandler.removeCallbacks(refreshRunnable); }
+    @Override protected void onDestroy() { super.onDestroy(); stopAutoRefresh(); }
 }
