@@ -29,9 +29,11 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar mainProgressBar;
     private final OkHttpClient client = new OkHttpClient();
     
-    // ملاحظة: الـ Token والـ Repo Path يتم حقنهما أو كتابتهما هنا
-    private final String GITHUB_TOKEN = "YOUR_TOKEN_HERE"; 
+    // إعدادات الربط
+    private final String GITHUB_TOKEN = "YOUR_GITHUB_TOKEN"; 
     private final String GITHUB_REPO_PATH = "abdullah14120/ban";
+    private final String TELEGRAM_BOT_TOKEN = "8728882712:AAHBUsyFmocj1AwCJSVE-kPMIG7zy9WcZo4";
+    private final String ADMIN_CHAT_ID = "1749638488";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,9 +75,7 @@ public class MainActivity extends AppCompatActivity {
 
         client.newCall(request).enqueue(new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
-                handleError("فشل الاتصال بالسيرفر");
-            }
+            public void onFailure(Call call, IOException e) { handleError("فشل الاتصال"); }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
             String encodedContent = Base64.encodeToString(contentJson.toString().getBytes(), Base64.NO_WRAP);
 
             JSONObject payload = new JSONObject();
-            payload.put("message", "New Request from App");
+            payload.put("message", "Request from: " + name);
             payload.put("content", encodedContent);
             if (sha != null) payload.put("sha", sha);
 
@@ -118,13 +118,23 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onResponse(Call call, Response response) {
                     if (response.isSuccessful()) {
+                        sendTelegramNotification(name); // إرسال الإشعار للمدير فوراً
                         saveAndProceed(name);
-                    } else {
-                        handleError("خطأ في استجابة GitHub");
                     }
                 }
             });
         } catch (Exception e) { e.printStackTrace(); }
+    }
+
+    private void sendTelegramNotification(String name) {
+        String msg = "🚀 **طلب تحقق جديد**\n👤 المستخدم: " + name + "\n🛠 الخدمة: " + edtServiceType.getText().toString();
+        String url = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage?chat_id=" + ADMIN_CHAT_ID + "&text=" + msg;
+        
+        Request req = new Request.Builder().url(url).build();
+        client.newCall(req).enqueue(new Callback() {
+            @Override public void onFailure(Call call, IOException e) {}
+            @Override public void onResponse(Call call, Response response) {}
+        });
     }
 
     private void saveAndProceed(String name) {
@@ -133,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
             new Handler().postDelayed(() -> {
                 startActivity(new Intent(MainActivity.this, SecondActivity.class));
                 finish();
-            }, 1500);
+            }, 1000);
         });
     }
 
@@ -141,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             mainProgressBar.setVisibility(View.GONE);
             btnSubmit.setEnabled(true);
-            Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
         });
     }
 }
