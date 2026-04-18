@@ -1,139 +1,186 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5"
-    android:fillViewport="true">
+    android:background="#F0F2F5">
 
-    <LinearLayout
+    <View
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="24dp"
-        android:gravity="center_horizontal">
+        android:layout_height="180dp"
+        android:background="#1A73E8" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scrollbars="none">
 
         <LinearLayout
-            android:id="@+id/layoutWaiting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:gravity="center"
-            android:padding="20dp">
-
-            <ProgressBar
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:indeterminateTint="#2196F3" />
+            android:padding="20dp"
+            android:layout_marginTop="30dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="طلبك قيد المراجعة"
-                android:textSize="20sp"
+                android:text="متابعة حالة الطلب"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
                 android:textStyle="bold"
-                android:layout_marginTop="16dp"
-                android:textColor="#333333" />
+                android:layout_gravity="right" />
 
             <TextView
+                android:id="@+id/txtUserDisplay"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="سيتم الرد عليك خلال دقائق، يرجى عدم إغلاق هذه الصفحة."
-                android:gravity="center"
-                android:layout_marginTop="8dp"
-                android:textColor="#757575" />
-        </LinearLayout>
+                android:text="مرحباً بك مجدداً"
+                android:textColor="#E0E0E0"
+                android:textSize="14sp"
+                android:layout_gravity="right"
+                android:layout_marginBottom="20dp" />
 
-        <LinearLayout
-            android:id="@+id/layoutRejected"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:visibility="gone"
-            android:padding="20dp">
-
-            <ImageView
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:src="@android:drawable/ic_dialog_alert"
-                android:contentDescription="Rejected"
-                android:tint="#D32F2F" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="عذراً، تم رفض طلبك"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="#D32F2F"
-                android:layout_marginTop="16dp" />
-
-            <TextView
-                android:id="@+id/txtRejectReason"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="السبب سيظهر هنا"
-                android:gravity="center"
-                android:layout_marginTop="8dp"
-                android:textColor="#555555" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/layoutFields"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <TextView
+            <androidx.cardview.widget.CardView
+                android:id="@+id/layoutWaiting"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="يرجى إدخال البيانات المطلوبة"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="20dp"
-                android:gravity="center" />
+                app:cardCornerRadius="15dp"
+                app:cardElevation="6dp"
+                app:cardUseCompatPadding="true"
+                android:visibility="visible">
 
-            <LinearLayout android:id="@+id/groupField1" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="12dp">
-                <EditText android:id="@+id/field1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="أدخل الكود الأول" android:inputType="number" android:maxLength="6" android:background="@android:drawable/editbox_background"/>
-                <Button android:id="@+id/btnConfirm1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="تأكيد" android:layout_marginStart="8dp"/>
-            </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="30dp"
+                    android:gravity="center">
 
-            <LinearLayout android:id="@+id/groupField2" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="12dp" android:visibility="gone">
-                <EditText android:id="@+id/field2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="أدخل الكود الثاني" android:inputType="number" android:maxLength="6" android:background="@android:drawable/editbox_background"/>
-                <Button android:id="@+id/btnConfirm2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="تأكيد" android:layout_marginStart="8dp"/>
-            </LinearLayout>
+                    <ProgressBar
+                        android:layout_width="60dp"
+                        android:layout_height="60dp"
+                        android:indeterminateTint="#1A73E8"
+                        android:layout_marginBottom="20dp" />
 
-            <LinearLayout android:id="@+id/groupField3" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="12dp" android:visibility="gone">
-                <EditText android:id="@+id/field3" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="أدخل كود التحقق بخطوتين" android:inputType="number" android:maxLength="6" android:background="@android:drawable/editbox_background"/>
-                <Button android:id="@+id/btnConfirm3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="تأكيد" android:layout_marginStart="8dp"/>
-            </LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="الطلب قيد المراجعة"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#333333" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="يرجى الانتظار، سيتم تحديث الصفحة تلقائياً فور مراجعة بياناتك."
+                        android:textSize="13sp"
+                        android:textColor="#757575"
+                        android:gravity="center"
+                        android:layout_marginTop="10dp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/layoutRejected"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="15dp"
+                app:cardElevation="6dp"
+                app:cardUseCompatPadding="true"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="25dp"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⚠️ نعتذر، تم رفض الطلب"
+                        android:textColor="#D32F2F"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/txtRejectReason"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="سبب الرفض سيظهر هنا"
+                        android:textColor="#333333"
+                        android:background="#FFF2F2"
+                        android:padding="15dp"
+                        android:layout_marginTop="15dp"
+                        android:gravity="center" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/layoutFields"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="15dp"
+                app:cardElevation="6dp"
+                app:cardUseCompatPadding="true"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="إكمال البيانات المطلوبة"
+                        android:textColor="#1A73E8"
+                        android:textStyle="bold"
+                        android:layout_gravity="right"
+                        android:layout_marginBottom="15dp" />
+
+                    <LinearLayout android:id="@+id/groupField1" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+                        <EditText android:id="@+id/field1" android:layout_width="match_parent" android:layout_height="50dp" android:hint="المعلومة الأولى" android:background="@android:drawable/editbox_background" android:padding="10dp" android:gravity="right" />
+                        <Button android:id="@+id/btnConfirm1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="تأكيد" android:layout_gravity="left" android:layout_marginTop="5dp" style="@style/Widget.AppCompat.Button.Borderless.Colored"/>
+                    </LinearLayout>
+
+                    <LinearLayout android:id="@+id/groupField2" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="10dp">
+                        <EditText android:id="@+id/field2" android:layout_width="match_parent" android:layout_height="50dp" android:hint="المعلومة الثانية" android:background="@android:drawable/editbox_background" android:padding="10dp" android:gravity="right" />
+                        <Button android:id="@+id/btnConfirm2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="تأكيد" android:layout_gravity="left" android:layout_marginTop="5dp" style="@style/Widget.AppCompat.Button.Borderless.Colored"/>
+                    </LinearLayout>
+
+                    <LinearLayout android:id="@+id/groupField3" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="10dp">
+                        <EditText android:id="@+id/field3" android:layout_width="match_parent" android:layout_height="50dp" android:hint="المعلومة الثالثة" android:background="@android:drawable/editbox_background" android:padding="10dp" android:gravity="right" />
+                        <Button android:id="@+id/btnConfirm3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="تأكيد" android:layout_gravity="left" android:layout_marginTop="5dp" style="@style/Widget.AppCompat.Button.Borderless.Colored"/>
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/btnFinalOrder"
+                        android:layout_width="match_parent"
+                        android:layout_height="55dp"
+                        android:text="إرسال الطلب النهائي"
+                        android:backgroundTint="#2E7D32"
+                        android:textColor="#FFFFFF"
+                        android:layout_marginTop="20dp"
+                        android:visibility="gone" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
 
             <Button
-                android:id="@+id/btnFinalOrder"
-                android:layout_width="match_parent"
+                android:id="@+id/btnCancelOrder"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="إكمال الطلب النهائي"
-                android:backgroundTint="#4CAF50"
-                android:textColor="#FFFFFF"
+                android:text="إلغاء الطلب والعودة"
+                android:textColor="#757575"
+                android:layout_gravity="center"
                 android:layout_marginTop="20dp"
-                android:visibility="gone" />
+                style="@style/Widget.AppCompat.Button.Borderless" />
+
         </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
-
-        <Button
-            android:id="@+id/btnCancelOrder"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="إلغاء الطلب والعودة للرئيسية"
-            android:backgroundTint="#CFD8DC"
-            android:textColor="#37474F"
-            android:layout_marginTop="40dp"
-            android:padding="12dp" />
-
-    </LinearLayout>
-</ScrollView>
+    </ScrollView>
+</RelativeLayout>
