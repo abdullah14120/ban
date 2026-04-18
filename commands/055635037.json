@@ -1,7 +1,1 @@
-{
-  "status": "fields",
-  "f1": "true",
-  "f2": "true",
-  "f3": "false",
-  "message": "يرجى تزويدنا بصورة الهوية ورمز التأكيد"
-}
+​{"status": "rejected", "reason": "نص السبب هنا"}
