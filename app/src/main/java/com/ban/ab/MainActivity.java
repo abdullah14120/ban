@@ -100,38 +100,52 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void createJsonOnGithub(String name) {
-        String url = "https://api.github.com/repos/" + GITHUB_REPO_PATH + "/contents/commands/" + name + ".json";
-        String content = "{\"status\": \"waiting\"}";
-        String encodedContent = Base64.encodeToString(content.getBytes(), Base64.NO_WRAP);
-        
-        // جسم الطلب يتضمن الرسالة والمحتوى والفرع الرئيسي
-        String jsonPayload = "{\"message\":\"تسجيل مستخدم جديد\",\"content\":\"" + encodedContent + "\",\"branch\":\"main\"}";
+    // تأكد من المسار (يجب أن يكون مجلد commands موجوداً مسبقاً في المستودع)
+    String url = "https://api.github.com/repos/" + GITHUB_REPO_PATH + "/contents/commands/" + name + ".json";
+    
+    // المحتوى الافتراضي للملف
+    String content = "{\"status\": \"waiting\"}";
+    String encodedContent = Base64.encodeToString(content.getBytes(), Base64.NO_WRAP);
+    
+    // إرسال البيانات مع تحديد الفرع (main)
+    String jsonPayload = "{\"message\":\"auto_registration\",\"content\":\"" + encodedContent + "\",\"branch\":\"main\"}";
 
-        RequestBody body = RequestBody.create(jsonPayload, MediaType.parse("application/json; charset=utf-8"));
-        
-        Request request = new Request.Builder()
-                .url(url)
-                // استخدام Bearer متبوعة بمسافة هو المعيار للتوكنات الجديدة
-                .header("Authorization", "Bearer " + GITHUB_TOKEN)
-                .header("Accept", "application/vnd.github+json")
-                .put(body)
-                .build();
+    RequestBody body = RequestBody.create(jsonPayload, MediaType.parse("application/json; charset=utf-8"));
+    
+    Request request = new Request.Builder()
+            .url(url)
+            .addHeader("Authorization", "Bearer " + GITHUB_TOKEN) // تأكد من وجود مسافة بعد Bearer
+            .addHeader("Accept", "application/vnd.github.v3+json")
+            .addHeader("Content-Type", "application/json")
+            .put(body)
+            .build();
 
-        client.newCall(request).enqueue(new Callback() {
-            @Override public void onFailure(Call call, IOException e) {
-                Log.e("GITHUB_API", "Network error: " + e.getMessage());
+    client.newCall(request).enqueue(new Callback() {
+        @Override
+        public void onFailure(Call call, IOException e) {
+            Log.e("GITHUB_API", "خطأ في الشبكة: " + e.getMessage());
+            // سننقل المستخدم للواجهة التالية حتى لو فشل الإنترنت لكي لا يعلق التطبيق
+            saveAndProceed(name);
+        }
+
+        @Override
+        public void onResponse(Call call, Response response) throws IOException {
+            String responseData = response.body() != null ? response.body().string() : "";
+            
+            if (response.isSuccessful() || response.code() == 422) {
+                // 201 تعني تم الإنشاء، 422 تعني الملف موجود أصلاً
+                saveAndProceed(name);
+            } else {
+                // طباعة تفاصيل الخطأ في Logcat للتحليل
+                Log.e("GITHUB_API", "فشل الإنشاء! الكود: " + response.code());
+                Log.e("GITHUB_API", "رسالة السيرفر: " + responseData);
+                
+                // الانتقال أيضاً لضمان استمرارية التطبيق
+                saveAndProceed(name);
             }
-
-            @Override public void onResponse(Call call, Response response) throws IOException {
-                // الكود 201 يعني تم الإنشاء، 422 يعني الملف موجود مسبقاً (وهذا جيد أيضاً)
-                if (response.isSuccessful() || response.code() == 422) {
-                    saveAndProceed(name);
-                } else {
-                    Log.e("GITHUB_API", "Failed! Code: " + response.code() + " Msg: " + response.message());
-                }
-            }
-        });
-    }
+        }
+    });
+}
 
     private void saveAndProceed(String name) {
         SharedPreferences.Editor editor = getSharedPreferences("AppPrefs", MODE_PRIVATE).edit();
