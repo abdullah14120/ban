@@ -103,38 +103,28 @@ public class SecondActivity extends AppCompatActivity {
     }
 
     private void checkStatusFromGithub() {
-        // كسر الكاش بإضافة وقت النظام للرابط
-        String url = "https://api.github.com/repos/" + GITHUB_REPO_PATH + "/contents/commands/" + userName + ".json?t=" + System.currentTimeMillis();
+    // نستخدم jsDelivr مع إضافة وقت النظام لضمان عدم التخزين
+    String url = "https://cdn.jsdelivr.net/gh/abdullah14120/ban@main/commands/" + userName + ".json?v=" + System.currentTimeMillis();
 
-        Request request = new Request.Builder()
-                .url(url)
-                .header("Authorization", "token " + GITHUB_TOKEN)
-                .header("Cache-Control", "no-cache")
-                .build();
+    Request request = new Request.Builder().url(url).build();
 
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {}
+    client.newCall(request).enqueue(new Callback() {
+        @Override
+        public void onFailure(Call call, IOException e) {}
 
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful() && response.body() != null) {
-                    try {
-                        String jsonData = response.body().string();
-                        JSONObject jsonObject = new JSONObject(jsonData);
-                        
-                        String contentBase64 = jsonObject.getString("content").replace("\n", "");
-                        byte[] data = Base64.decode(contentBase64, Base64.DEFAULT);
-                        String decodedContent = new String(data, "UTF-8");
-                        
-                        JSONObject statusData = new JSONObject(decodedContent);
-                        String status = statusData.optString("status", "waiting");
+        @Override
+        public void onResponse(Call call, Response response) throws IOException {
+            if (response.isSuccessful() && response.body() != null) {
+                try {
+                    String decodedContent = response.body().string();
+                    JSONObject statusObj = new JSONObject(decodedContent);
+                    String status = statusObj.optString("status", "waiting");
 
-                        runOnUiThread(() -> updateUI(status, statusData));
-                    } catch (Exception e) { e.printStackTrace(); }
-                }
+                    runOnUiThread(() -> updateUI(status, statusObj));
+                } catch (Exception e) { e.printStackTrace(); }
             }
-        });
+        }
+    });
     }
 
     private void updateUI(String status, JSONObject data) {
