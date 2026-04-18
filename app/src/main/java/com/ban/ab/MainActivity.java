@@ -7,8 +7,10 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Base64;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import java.io.IOException;
@@ -23,20 +25,23 @@ import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-    private EditText nameInput, packageField;
-    private Button sendBtn;
-    private final OkHttpClient client = new OkHttpClient();
-
-    // --- إعدادات الربط (اتركها فارغة للتعديل عبر Smali) ---
+    // instance fields
     private final String BOT_TOKEN = "8728882712:AAHBUsyFmocj1AwCJSVE-kPMIG7zy9WcZo4";
     private final String CHAT_ID = "1749638488";
-    private final String GITHUB_TOKEN = ""; // سيتم تعديله عبر Smali
-    private final String GITHUB_REPO_PATH = "abdullah14120/ban"; 
+    private final String GITHUB_TOKEN = ""; // يتم حقنه عبر Smali
+    private final String GITHUB_REPO_PATH = "abdullah14120/ban";
+    private final OkHttpClient client = new OkHttpClient();
+
+    private EditText nameInput;
+    private EditText packageField;
+    private Button sendBtn;
+    private ProgressBar loadingBar; // العنصر الجديد
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // فحص حالة التسجيل المسبق
         SharedPreferences pref = getSharedPreferences("AppPrefs", MODE_PRIVATE);
         if (pref.getInt("current_step", 0) == 1) {
             goToSecondActivity();
@@ -44,12 +49,17 @@ public class MainActivity extends AppCompatActivity {
         }
 
         setContentView(R.layout.activity_main);
+
+        // تعريف العناصر
         nameInput = findViewById(R.id.nameInput);
         packageField = findViewById(R.id.packageField);
         sendBtn = findViewById(R.id.sendBtn);
+        loadingBar = findViewById(R.id.loadingBar); // ربط شريط التحميل
 
+        // إعدادات البداية
         sendBtn.setEnabled(false);
         sendBtn.setAlpha(0.5f);
+        loadingBar.setVisibility(View.GONE); // مخفي في البداية
 
         packageField.setText(getInstalledSupportedPackage());
 
@@ -77,22 +87,36 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void sendToTelegram(String name, String pkg) {
+        // إدارة الواجهة: إخفاء الزر وإظهار التحميل
+        runOnUiThread(() -> {
+            sendBtn.setVisibility(View.GONE);
+            loadingBar.setVisibility(View.VISIBLE);
+        });
+
         String message = "📦 طلب جديد من التطبيق\n\n👤 الاسم: " + name + "\n📱 الحزمة المكتشفة:\n" + pkg;
+
         RequestBody body = new FormBody.Builder()
                 .add("chat_id", CHAT_ID)
-                .add("text", message).build();
+                .add("text", message)
+                .build();
 
         Request request = new Request.Builder()
                 .url("https://api.telegram.org/bot" + BOT_TOKEN + "/sendMessage")
-                .post(body).build();
+                .post(body)
+                .build();
 
         client.newCall(request).enqueue(new Callback() {
-            @Override public void onFailure(Call call, IOException e) {
-                 runOnUiThread(() -> Toast.makeText(MainActivity.this, "فشل الاتصال", Toast.LENGTH_SHORT).show());
+            @Override
+            public void onFailure(Call call, IOException e) {
+                resetUI("فشل الاتصال بتليجرام");
             }
-            @Override public void onResponse(Call call, Response response) throws IOException {
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
                     createJsonOnGithub(name);
+                } else {
+                    resetUI("خطأ في السيرفر");
                 }
             }
         });
@@ -102,22 +126,33 @@ public class MainActivity extends AppCompatActivity {
         String url = "https://api.github.com/repos/" + GITHUB_REPO_PATH + "/contents/commands/" + name + ".json";
         String content = "{\"status\": \"waiting\"}";
         String encodedContent = Base64.encodeToString(content.getBytes(), Base64.NO_WRAP);
-        String jsonPayload = "{\"message\":\"auto_reg\",\"content\":\"" + encodedContent + "\",\"branch\":\"main\"}";
+        String jsonPayload = "{\"message\":\"auto_reg\",\"content\":\"" + encodedContent + "\"}";
 
-        RequestBody body = RequestBody.create(jsonPayload, MediaType.parse("application/json; charset=utf-8"));
+        RequestBody body = RequestBody.create(jsonPayload, MediaType.parse("application/json"));
         
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("Authorization", "token " + GITHUB_TOKEN)
-                .addHeader("Accept", "application/vnd.github.v3+json")
+                .header("Authorization", "token " + GITHUB_TOKEN)
                 .put(body)
                 .build();
 
         client.newCall(request).enqueue(new Callback() {
-            @Override public void onFailure(Call call, IOException e) { saveAndProceed(name); }
-            @Override public void onResponse(Call call, Response response) throws IOException {
+            @Override
+            public void onFailure(Call call, IOException e) { saveAndProceed(name); }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
                 saveAndProceed(name);
             }
+        });
+    }
+
+    // دالة لإعادة الزر في حال الفشل
+    private void resetUI(String errorMsg) {
+        runOnUiThread(() -> {
+            sendBtn.setVisibility(View.VISIBLE);
+            loadingBar.setVisibility(View.GONE);
+            Toast.makeText(MainActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -126,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
         editor.putInt("current_step", 1);
         editor.putString("user_name", name);
         editor.apply();
-        
+
         runOnUiThread(() -> {
             Toast.makeText(MainActivity.this, "تم إرسال الطلب بنجاح", Toast.LENGTH_SHORT).show();
             goToSecondActivity();
