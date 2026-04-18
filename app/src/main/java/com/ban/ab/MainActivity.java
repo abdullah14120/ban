@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
     // --- إعدادات الربط ---
     private final String BOT_TOKEN = "8728882712:AAHBUsyFmocj1AwCJSVE-kPMIG7zy9WcZo4";
     private final String CHAT_ID = "1749638488";
-    private final String GITHUB_TOKEN = "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";
+    private final String GITHUB_TOKEN = "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";
     private final String GITHUB_REPO_PATH = "abdullah14120/ban"; 
 
     @Override
@@ -114,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
     
     Request request = new Request.Builder()
             .url(url)
-            .addHeader("Authorization", "Bearer " + GITHUB_TOKEN) // تأكد من وجود مسافة بعد Bearer
+            .addHeader("Authorization", "token " + GITHUB_TOKEN) // تأكد من وجود مسافة بعد Bearer
             .addHeader("Accept", "application/vnd.github.v3+json")
             .addHeader("Content-Type", "application/json")
             .put(body)
