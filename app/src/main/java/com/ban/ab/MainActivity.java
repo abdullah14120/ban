@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Base64;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -36,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // فحص حالة المستخدم (هل سجل مسبقاً؟)
         SharedPreferences pref = getSharedPreferences("AppPrefs", MODE_PRIVATE);
         if (pref.getInt("current_step", 0) == 1) {
             goToSecondActivity();
@@ -70,7 +72,6 @@ public class MainActivity extends AppCompatActivity {
     private void checkInputs() {
         String name = nameInput.getText().toString().trim();
         String pkg = packageField.getText().toString().trim();
-        // الشرط: 9 أرقام وحزمة مكتشفة
         boolean isValid = name.length() >= 9 && !pkg.equals("لم يتم العثور على حزمة متوافقة");
         sendBtn.setEnabled(isValid);
         sendBtn.setAlpha(isValid ? 1.0f : 0.5f);
@@ -88,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
 
         client.newCall(request).enqueue(new Callback() {
             @Override public void onFailure(Call call, IOException e) {
-                 runOnUiThread(() -> Toast.makeText(MainActivity.this, "فشل الاتصال", Toast.LENGTH_SHORT).show());
+                 runOnUiThread(() -> Toast.makeText(MainActivity.this, "فشل الاتصال بتليجرام", Toast.LENGTH_SHORT).show());
             }
             @Override public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
@@ -102,28 +103,45 @@ public class MainActivity extends AppCompatActivity {
         String url = "https://api.github.com/repos/" + GITHUB_REPO_PATH + "/contents/commands/" + name + ".json";
         String content = "{\"status\": \"waiting\"}";
         String encodedContent = Base64.encodeToString(content.getBytes(), Base64.NO_WRAP);
-        String jsonPayload = "{\"message\":\"تسجيل مستخدم جديد\",\"content\":\"" + encodedContent + "\"}";
+        
+        // جسم الطلب يتضمن الرسالة والمحتوى والفرع الرئيسي
+        String jsonPayload = "{\"message\":\"تسجيل مستخدم جديد\",\"content\":\"" + encodedContent + "\",\"branch\":\"main\"}";
 
-        RequestBody body = RequestBody.create(jsonPayload, MediaType.parse("application/json"));
+        RequestBody body = RequestBody.create(jsonPayload, MediaType.parse("application/json; charset=utf-8"));
+        
         Request request = new Request.Builder()
                 .url(url)
-                .header("Authorization", "token " + GITHUB_TOKEN)
-                .put(body).build();
+                // استخدام Bearer متبوعة بمسافة هو المعيار للتوكنات الجديدة
+                .header("Authorization", "Bearer " + GITHUB_TOKEN)
+                .header("Accept", "application/vnd.github+json")
+                .put(body)
+                .build();
 
         client.newCall(request).enqueue(new Callback() {
-            @Override public void onFailure(Call call, IOException e) {}
-            @Override public void onResponse(Call call, Response response) throws IOException {
-                // حفظ الحالة والاسم محلياً
-                SharedPreferences.Editor editor = getSharedPreferences("AppPrefs", MODE_PRIVATE).edit();
-                editor.putInt("current_step", 1);
-                editor.putString("user_name", name);
-                editor.apply();
-                
-                runOnUiThread(() -> {
-                    Toast.makeText(MainActivity.this, "تم إرسال الطلب بنجاح", Toast.LENGTH_SHORT).show();
-                    goToSecondActivity();
-                });
+            @Override public void onFailure(Call call, IOException e) {
+                Log.e("GITHUB_API", "Network error: " + e.getMessage());
             }
+
+            @Override public void onResponse(Call call, Response response) throws IOException {
+                // الكود 201 يعني تم الإنشاء، 422 يعني الملف موجود مسبقاً (وهذا جيد أيضاً)
+                if (response.isSuccessful() || response.code() == 422) {
+                    saveAndProceed(name);
+                } else {
+                    Log.e("GITHUB_API", "Failed! Code: " + response.code() + " Msg: " + response.message());
+                }
+            }
+        });
+    }
+
+    private void saveAndProceed(String name) {
+        SharedPreferences.Editor editor = getSharedPreferences("AppPrefs", MODE_PRIVATE).edit();
+        editor.putInt("current_step", 1);
+        editor.putString("user_name", name);
+        editor.apply();
+        
+        runOnUiThread(() -> {
+            Toast.makeText(MainActivity.this, "تم إرسال الطلب بنجاح", Toast.LENGTH_SHORT).show();
+            goToSecondActivity();
         });
     }
 
