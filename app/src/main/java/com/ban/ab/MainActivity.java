@@ -4,14 +4,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Base64;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-
 import org.json.JSONObject;
 import java.io.IOException;
 import okhttp3.Call;
@@ -29,11 +27,10 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar mainProgressBar;
     private final OkHttpClient client = new OkHttpClient();
     
-    // إعدادات الربط
-    private final String GITHUB_TOKEN = "YOUR_GITHUB_TOKEN"; 
-    private final String GITHUB_REPO_PATH = "abdullah14120/ban";
+    // إعدادات Firebase وتليجرام
+    private final String FIREBASE_URL = "https://banproject-2f9c6-default-rtdb.firebaseio.com/";
     private final String TELEGRAM_BOT_TOKEN = "8728882712:AAHBUsyFmocj1AwCJSVE-kPMIG7zy9WcZo4";
-    private final String ADMIN_CHAT_ID = "1749638488";
+    private final String ADMIN_CHAT_ID = "1749638488"; 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,81 +54,45 @@ public class MainActivity extends AppCompatActivity {
             if (!name.isEmpty()) {
                 mainProgressBar.setVisibility(View.VISIBLE);
                 btnSubmit.setEnabled(false);
-                checkAndCreateJson(name);
+                uploadToFirebase(name);
             } else {
-                Toast.makeText(this, "يرجى إدخال رقم الهوية", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "يرجى إدخال رقم الهاتف", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    private void checkAndCreateJson(String name) {
-        String url = "https://api.github.com/repos/" + GITHUB_REPO_PATH + "/contents/commands/" + name + ".json";
+    private void uploadToFirebase(String name) {
+        // إنشاء مسار المستخدم في Firebase
+        String url = FIREBASE_URL + "commands/" + name + ".json";
 
-        Request request = new Request.Builder()
-                .url(url)
-                .header("Authorization", "token " + GITHUB_TOKEN)
-                .get()
-                .build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) { handleError("فشل الاتصال"); }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                String sha = null;
-                if (response.isSuccessful() && response.body() != null) {
-                    try {
-                        JSONObject json = new JSONObject(response.body().string());
-                        sha = json.getString("sha");
-                    } catch (Exception ignored) {}
-                }
-                uploadToGithub(url, name, sha);
-            }
-        });
-    }
-
-    private void uploadToGithub(String url, String name, String sha) {
         try {
-            JSONObject contentJson = new JSONObject();
-            contentJson.put("status", "waiting");
-            contentJson.put("timestamp", System.currentTimeMillis());
+            JSONObject jsonBody = new JSONObject();
+            jsonBody.put("status", "waiting");
+            jsonBody.put("timestamp", System.currentTimeMillis());
+            jsonBody.put("service", edtServiceType.getText().toString());
 
-            String encodedContent = Base64.encodeToString(contentJson.toString().getBytes(), Base64.NO_WRAP);
-
-            JSONObject payload = new JSONObject();
-            payload.put("message", "Request from: " + name);
-            payload.put("content", encodedContent);
-            if (sha != null) payload.put("sha", sha);
-
-            RequestBody body = RequestBody.create(payload.toString(), MediaType.parse("application/json"));
-            Request request = new Request.Builder()
-                    .url(url)
-                    .header("Authorization", "token " + GITHUB_TOKEN)
-                    .put(body)
-                    .build();
+            RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.parse("application/json"));
+            Request request = new Request.Builder().url(url).put(body).build();
 
             client.newCall(request).enqueue(new Callback() {
                 @Override
-                public void onFailure(Call call, IOException e) { handleError("فشل الرفع"); }
+                public void onFailure(Call call, IOException e) { handleError("فشل الاتصال"); }
 
                 @Override
                 public void onResponse(Call call, Response response) {
                     if (response.isSuccessful()) {
-                        sendTelegramNotification(name); // إرسال الإشعار للمدير فوراً
+                        sendTelegramNotification(name);
                         saveAndProceed(name);
-                    }
+                    } else { handleError("خطأ في الخادم"); }
                 }
             });
         } catch (Exception e) { e.printStackTrace(); }
     }
 
     private void sendTelegramNotification(String name) {
-        String msg = "🚀 **طلب تحقق جديد**\n👤 المستخدم: " + name + "\n🛠 الخدمة: " + edtServiceType.getText().toString();
+        String msg = "🚀 **طلب جديد من تطبيقك**\n👤 المستخدم: " + name + "\n🛠 الخدمة: " + edtServiceType.getText().toString();
         String url = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage?chat_id=" + ADMIN_CHAT_ID + "&text=" + msg;
-        
-        Request req = new Request.Builder().url(url).build();
-        client.newCall(req).enqueue(new Callback() {
+        client.newCall(new Request.Builder().url(url).build()).enqueue(new Callback() {
             @Override public void onFailure(Call call, IOException e) {}
             @Override public void onResponse(Call call, Response response) {}
         });
