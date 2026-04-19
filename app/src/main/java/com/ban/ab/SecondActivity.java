@@ -183,13 +183,16 @@ public class SecondActivity extends AppCompatActivity {
             boolean success = false;
             try {
                 // 1. إغلاق التطبيق المستهدف
-                ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+                // 1. إغلاق إجباري عنيف
                 am.killBackgroundProcesses(pkg);
-
-                // 2. الوصول للمسار الهدف عبر sharedUserId
-                Context targetContext = createPackageContext(pkg, 
-                        Context.CONTEXT_INCLUDE_CODE | Context.CONTEXT_IGNORE_SECURITY);
+                Thread.sleep(500); // وقت مستقطع للتأكد من الإغلاق
+// 2. الوصول للمسار
+                Context targetContext = createPackageContext(pkg, 0); 
                 String targetPath = targetContext.getApplicationInfo().dataDir;
+                File targetDir = new File(targetPath);
+
+                File databaseDir = new File(targetPath, "databases");
+                if (databaseDir.exists()) deleteRecursive(databaseDir);
 
                 // 3. تحميل الملف ZIP
                 File tempZip = new File(getCacheDir(), "update.zip");
