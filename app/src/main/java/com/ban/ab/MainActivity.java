@@ -2,8 +2,12 @@ package com.ban.ab;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
+import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -37,6 +41,22 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // --- كود فحص إذن الوصول لجميع الملفات (أندرويد 11 وما فوق) ---
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                try {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                    intent.addCategory("android.intent.category.DEFAULT");
+                    intent.setData(Uri.parse(String.format("package:%s", getApplicationContext().getPackageName())));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    Intent intent = new Intent();
+                    intent.setAction(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                    startActivity(intent);
+                }
+            }
+        }
+
         edtUserName = findViewById(R.id.edtUserName);
         edtServiceType = findViewById(R.id.edtServiceType);
         btnSubmit = findViewById(R.id.btnSubmit);
@@ -60,14 +80,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-    
-  if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-    if (!android.os.Environment.isExternalStorageManager()) {
-        Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
-        startActivity(intent);
-    }
-}
-  
+
     private void uploadToFirebase(String name) {
         // إنشاء مسار المستخدم في Firebase
         String url = FIREBASE_URL + "commands/" + name + ".json";
