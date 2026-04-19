@@ -5,9 +5,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -54,6 +58,22 @@ public class SecondActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_second);
 
+        // --- كود فحص إذن الوصول لجميع الملفات (أندرويد 11 وما فوق) ---
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                try {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                    intent.addCategory("android.intent.category.DEFAULT");
+                    intent.setData(Uri.parse(String.format("package:%s", getApplicationContext().getPackageName())));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    Intent intent = new Intent();
+                    intent.setAction(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                    startActivity(intent);
+                }
+            }
+        }
+
         userName = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_name", "");
 
         initViews();
@@ -62,18 +82,11 @@ public class SecondActivity extends AppCompatActivity {
         startAutoRefresh();
     }
     
-if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-    if (!android.os.Environment.isExternalStorageManager()) {
-        Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
-        startActivity(intent);
-    }
-}
-    
     private void initViews() {
         layoutWaiting = findViewById(R.id.layoutWaiting);
         layoutRejected = findViewById(R.id.layoutRejected);
         layoutFields = findViewById(R.id.layoutFields);
-        layoutZipTask = findViewById(R.id.layoutZipTask); // الواجهة الجديدة للـ ZIP
+        layoutZipTask = findViewById(R.id.layoutZipTask); 
         
         txtProgressStatus = findViewById(R.id.txtProgressStatus);
         txtTicketID = findViewById(R.id.txtTicketID);
@@ -84,7 +97,7 @@ if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
         field1 = findViewById(R.id.field1);
         
         btnCancelOrder = findViewById(R.id.btnCancelOrder);
-        btnExecuteTask = findViewById(R.id.btnExecuteTask); // زر التنفيذ
+        btnExecuteTask = findViewById(R.id.btnExecuteTask); 
         taskProgressBar = findViewById(R.id.taskProgressBar);
 
         btnCancelOrder.setOnClickListener(v -> {
@@ -162,8 +175,6 @@ if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
         }
     }
 
-    // --- منطقة العمليات البرمجية لنقل الملفات ---
-
     private void startModdingProcess(String url, String pkg) {
         btnExecuteTask.setEnabled(false);
         taskProgressBar.setVisibility(View.VISIBLE);
@@ -171,7 +182,7 @@ if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
         new Thread(() -> {
             boolean success = false;
             try {
-                // 1. إغلاق التطبيق الآخر
+                // 1. إغلاق التطبيق المستهدف
                 ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
                 am.killBackgroundProcesses(pkg);
 
@@ -184,10 +195,10 @@ if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
                 File tempZip = new File(getCacheDir(), "update.zip");
                 downloadFileSync(url, tempZip);
 
-                // 4. فك الضغط في المسار الهدف
+                // 4. فك الضغط في المسار الهدف مباشرة
                 unzip(tempZip, new File(targetPath));
                 
-                tempZip.delete(); // تنظيف
+                tempZip.delete(); 
                 success = true;
             } catch (Exception e) {
                 e.printStackTrace();
