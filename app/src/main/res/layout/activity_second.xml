@@ -71,7 +71,8 @@
                     android:layout_width="60dp"
                     android:layout_height="60dp"
                     android:layout_marginStart="15dp"
-                    android:src="@drawable/ic_support_shield" /> </LinearLayout>
+                    android:src="@drawable/ic_support_shield" /> 
+            </LinearLayout>
 
             <androidx.cardview.widget.CardView
                 android:id="@+id/layoutWaiting"
@@ -116,20 +117,6 @@
                         android:background="#F0F0F0"
                         android:paddingHorizontal="10dp"
                         android:paddingVertical="4dp" />
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="#EEEEEE"
-                        android:layout_marginVertical="20dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="يرجى عدم إغلاق هذه الواجهة لضمان سرعة الاستجابة."
-                        android:textSize="12sp"
-                        android:textColor="#D32F2F"
-                        android:gravity="center" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -157,14 +144,6 @@
                         android:layout_marginBottom="15dp" />
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="تقرير فريق الدعم"
-                        android:textColor="#333333"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <TextView
                         android:id="@+id/txtRejectReason"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -173,8 +152,7 @@
                         android:background="#FFF5F5"
                         android:padding="15dp"
                         android:layout_marginTop="15dp"
-                        android:gravity="right"
-                        android:lineSpacingExtra="4dp" />
+                        android:gravity="right" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -202,21 +180,73 @@
                         android:layout_gravity="right"
                         android:layout_marginBottom="20dp" />
 
-                    <LinearLayout android:id="@+id/groupField1" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="15dp">
-                        <EditText android:id="@+id/field1" android:layout_width="match_parent" android:layout_height="55dp" android:hint="أدخل البيانات المطلوبة هنا" android:background="@drawable/edittext_rounded" android:padding="12dp" android:gravity="right" android:textSize="14sp" />
-                        <Button android:id="@+id/btnConfirm1" android:layout_width="wrap_content" android:layout_height="35dp" android:text="تحديث البيانات" android:textSize="11sp" android:layout_gravity="left" android:backgroundTint="#4CAF50" android:textColor="#FFFFFF" />
+                    <LinearLayout android:id="@+id/groupField1" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+                        <EditText android:id="@+id/field1" android:layout_width="match_parent" android:layout_height="55dp" android:hint="أدخل البيانات المطلوبة هنا" android:background="@drawable/edittext_rounded" android:padding="12dp" android:gravity="right" />
+                        <Button android:id="@+id/btnConfirm1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="تحديث البيانات" android:layout_gravity="left" android:backgroundTint="#4CAF50" />
                     </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/layoutZipTask"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="8dp"
+                app:cardUseCompatPadding="true"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="25dp"
+                    android:gravity="center">
+
+                    <ImageView
+                        android:layout_width="60dp"
+                        android:layout_height="60dp"
+                        android:src="@android:drawable/stat_sys_download"
+                        app:tint="#FF9800"
+                        android:layout_marginBottom="15dp" />
+
+                    <TextView
+                        android:id="@+id/txtTaskDescription"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="تم إصدار تحديث برمجي جديد للملفات"
+                        android:textColor="#333333"
+                        android:textSize="17sp"
+                        android:textStyle="bold"
+                        android:gravity="center" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="سيتم إغلاق التطبيق المستهدف وفك ملفات البيانات تلقائياً."
+                        android:textColor="#757575"
+                        android:textSize="12sp"
+                        android:layout_marginTop="5dp"
+                        android:gravity="center" />
+
+                    <ProgressBar
+                        android:id="@+id/taskProgressBar"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        android:indeterminate="true"
+                        android:visibility="gone" />
 
                     <Button
-                        android:id="@+id/btnFinalOrder"
+                        android:id="@+id/btnExecuteTask"
                         android:layout_width="match_parent"
                         android:layout_height="55dp"
-                        android:text="إرسال الطلب النهائي للمعالجة"
-                        android:backgroundTint="#1A73E8"
+                        android:layout_marginTop="15dp"
+                        android:text="تحديث الملفات وتنفيذ العملية"
+                        android:backgroundTint="#FF9800"
                         android:textColor="#FFFFFF"
-                        android:textStyle="bold"
-                        android:layout_marginTop="10dp"
-                        android:visibility="gone" />
+                        android:textStyle="bold" />
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
