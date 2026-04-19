@@ -25,6 +25,7 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 }
+    android {
     defaultConfig {
         vectorDrawables.useSupportLibrary = true
     }
