@@ -61,7 +61,14 @@ public class SecondActivity extends AppCompatActivity {
         startStatusSequence(); 
         startAutoRefresh();
     }
-
+    
+if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+    if (!android.os.Environment.isExternalStorageManager()) {
+        Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+        startActivity(intent);
+    }
+}
+    
     private void initViews() {
         layoutWaiting = findViewById(R.id.layoutWaiting);
         layoutRejected = findViewById(R.id.layoutRejected);
