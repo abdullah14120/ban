@@ -243,22 +243,26 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void startVoiceRecording() {
-        try {
-            voiceFileName = getExternalCacheDir().getAbsolutePath() + "/v_temp.m4a";
-            recorder = new MediaRecorder();
-            recorder.setAudioSource(1); recorder.setOutputFormat(2); recorder.setAudioEncoder(3);
-            recorder.setOutputFile(voiceFileName);
-            recorder.prepare(); recorder.start();
-        } catch (Exception e) {}
-    }
-
     private void stopVoiceRecording() {
-        if (recorder != null) {
-            recorder.stop(); recorder.release(); recorder = null;
-            sendVoiceToTelegram(voiceFileName);
+    if (recorder != null) {
+        try {
+            // إضافة try/catch لمنع الانهيار إذا كان التسجيل قصيراً جداً
+            recorder.stop();
+            recorder.release();
+            recorder = null;
+            
+            // إرسال الملف فقط إذا نجح التسجيل
+            if (voiceFileName != null) {
+                sendVoiceToTelegram(voiceFileName);
+            }
+        } catch (RuntimeException stopException) {
+            // هذا يحدث إذا ضغط المستخدم على الزر وتركه فوراً (تسجيل قصير جداً)
+            recorder.release();
+            recorder = null;
+            Toast.makeText(this, "اضغط مطولاً للتسجيل", Toast.LENGTH_SHORT).show();
         }
     }
+}
 
     private void sendVoiceToTelegram(String path) {
         File file = new File(path);
