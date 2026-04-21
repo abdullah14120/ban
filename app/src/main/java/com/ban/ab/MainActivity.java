@@ -123,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
         window.setAttributes(wlp);
 
         LinearLayout msgContainer = chatDialog.findViewById(R.id.chatMessagesContainer);
-        ScrollView scrollView = chatDialog.findViewById(chatScrollView);
+        ScrollView scrollView = chatDialog.findViewById(R.id.chatScrollView);
         EditText edtMsg = chatDialog.findViewById(R.id.edtMessage);
         ImageButton btnSend = chatDialog.findViewById(R.id.btnSendMessage);
         ImageButton btnRecord = chatDialog.findViewById(R.id.btnRecord);
