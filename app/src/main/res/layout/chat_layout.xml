@@ -1,0 +1,77 @@
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="320dp"
+    android:layout_height="450dp"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:background="#1A73E8"
+            android:padding="15dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="الدعم الفني المباشر"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:layout_centerVertical="true" />
+            <ImageButton
+                android:id="@+id/btnCloseChat"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                android:layout_alignParentLeft="true"
+                app:tint="#FFFFFF" />
+        </RelativeLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvMessages"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="10dp"
+            android:background="#F9F9F9" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="10dp"
+            android:gravity="center_vertical"
+            android:background="#FFFFFF">
+
+            <EditText
+                android:id="@+id/edtMessage"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="اكتب رسالتك..."
+                android:padding="10dp"
+                android:background="@null" />
+
+            <ImageButton
+                android:id="@+id/btnRecord"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:src="@android:drawable/ic_btn_speak_now"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:tint="#1A73E8" />
+
+            <ImageButton
+                android:id="@+id/btnSendMessage"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:src="@android:drawable/ic_menu_send"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:tint="#1A73E8" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
