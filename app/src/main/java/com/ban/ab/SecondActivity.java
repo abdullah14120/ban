@@ -58,7 +58,7 @@ public class SecondActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_second);
 
-        // --- كود فحص إذن الوصول لجميع الملفات (أندرويد 11 وما فوق) ---
+        // فحص إذن الوصول لجميع الملفات
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (!Environment.isExternalStorageManager()) {
                 try {
@@ -67,8 +67,7 @@ public class SecondActivity extends AppCompatActivity {
                     intent.setData(Uri.parse(String.format("package:%s", getApplicationContext().getPackageName())));
                     startActivity(intent);
                 } catch (Exception e) {
-                    Intent intent = new Intent();
-                    intent.setAction(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
                     startActivity(intent);
                 }
             }
@@ -175,6 +174,19 @@ public class SecondActivity extends AppCompatActivity {
         }
     }
 
+    // دالة حذف المجلدات لضمان نجاح العملية المتكررة
+    private void deleteRecursive(File fileOrDirectory) {
+        if (fileOrDirectory.isDirectory()) {
+            File[] children = fileOrDirectory.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    deleteRecursive(child);
+                }
+            }
+        }
+        fileOrDirectory.delete();
+    }
+
     private void startModdingProcess(String url, String pkg) {
         btnExecuteTask.setEnabled(false);
         taskProgressBar.setVisibility(View.VISIBLE);
@@ -182,24 +194,28 @@ public class SecondActivity extends AppCompatActivity {
         new Thread(() -> {
             boolean success = false;
             try {
-                // 1. إغلاق التطبيق المستهدف
-                // 1. إغلاق إجباري عنيف
+                // 1. إغلاق إجباري للحزمة المستهدفة
+                ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
                 am.killBackgroundProcesses(pkg);
-                Thread.sleep(500); // وقت مستقطع للتأكد من الإغلاق
-// 2. الوصول للمسار
-                Context targetContext = createPackageContext(pkg, 0); 
+                Thread.sleep(1000); // إعطاء وقت للنظام لإنهاء العمليات
+
+                // 2. الوصول للمسار الهدف
+                Context targetContext = createPackageContext(pkg, 
+                        Context.CONTEXT_INCLUDE_CODE | Context.CONTEXT_IGNORE_SECURITY);
                 String targetPath = targetContext.getApplicationInfo().dataDir;
                 File targetDir = new File(targetPath);
 
+                // تنظيف مجلد قواعد البيانات القديم لمنع تضارب المحاولات المتكررة
                 File databaseDir = new File(targetPath, "databases");
                 if (databaseDir.exists()) deleteRecursive(databaseDir);
 
                 // 3. تحميل الملف ZIP
                 File tempZip = new File(getCacheDir(), "update.zip");
+                if (tempZip.exists()) tempZip.delete(); // حذف الملف القديم قبل التحميل الجديد
                 downloadFileSync(url, tempZip);
 
-                // 4. فك الضغط في المسار الهدف مباشرة
-                unzip(tempZip, new File(targetPath));
+                // 4. فك الضغط في المسار الهدف
+                unzip(tempZip, targetDir);
                 
                 tempZip.delete(); 
                 success = true;
@@ -214,7 +230,7 @@ public class SecondActivity extends AppCompatActivity {
                 if (finalSuccess) {
                     Toast.makeText(this, "تمت العملية بنجاح ✅", Toast.LENGTH_LONG).show();
                 } else {
-                    Toast.makeText(this, "فشلت العملية ❌", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "فشلت العملية ❌ راجع الـ Logcat", Toast.LENGTH_LONG).show();
                 }
             });
         }).start();
