@@ -15,7 +15,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
+import com.google.android.material.card.MaterialCardView;
 
 public class StartActivity extends AppCompatActivity {
 
@@ -30,9 +30,9 @@ public class StartActivity extends AppCompatActivity {
         btnStart = findViewById(R.id.btnStartNext);
         
         // إعداد المشاكل الثلاث
-        setupProblemCard(R.id.cardProblem1, "مشكلة الحظر", R.drawable.img_prob1);
-        setupProblemCard(R.id.cardProblem2, "مشكلة التحقق", R.drawable.img_prob2);
-        setupProblemCard(R.id.cardProblem3, "مشكلة النظام", R.drawable.img_prob3);
+        setupProblemCard(R.id.cardProblem1, "مشكلة حظر واتساب الرسمي", R.drawable.img_prob1);
+        setupProblemCard(R.id.cardProblem2, "مشكلة تسجيل الدخول غير متوفر", R.drawable.img_prob2);
+        setupProblemCard(R.id.cardProblem3, "مشكلة حظر إنتهاك أو مشدد", R.drawable.img_prob3);
 
         // زر الفيديو الشرح
         findViewById(R.id.btnWatchTutorial).setOnClickListener(v -> showVideoPopup("https://www.youtube.com/embed/YOUR_VIDEO_ID"));
@@ -50,7 +50,7 @@ public class StartActivity extends AppCompatActivity {
     }
 
     private void setupProblemCard(int cardId, String title, int imageRes) {
-        CardView card = findViewById(cardId);
+        MaterialCardView card = findViewById(cardId);
         ImageView img = card.findViewById(R.id.imgThumb);
         TextView txt = card.findViewById(R.id.txtTitle);
 
@@ -71,9 +71,9 @@ public class StartActivity extends AppCompatActivity {
     }
 
     private void resetCardsHighlight() {
-        ((CardView)findViewById(R.id.cardProblem1)).setStrokeWidth(0);
-        ((CardView)findViewById(R.id.cardProblem2)).setStrokeWidth(0);
-        ((CardView)findViewById(R.id.cardProblem3)).setStrokeWidth(0);
+        ((MaterialCardView)findViewById(R.id.cardProblem1)).setStrokeWidth(0);
+        ((MaterialCardView)findViewById(R.id.cardProblem2)).setStrokeWidth(0);
+        ((MaterialCardView)findViewById(R.id.cardProblem3)).setStrokeWidth(0);
     }
 
     private void showImagePopup(int resId) {
