@@ -19,17 +19,18 @@ import android.provider.Settings;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.FrameLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -39,6 +40,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import okhttp3.Call;
@@ -69,6 +71,8 @@ public class SecondActivity extends AppCompatActivity {
     private MediaRecorder recorder;
     private String voiceFileName;
     private FloatingActionButton fabChat;
+    private Handler chatHandler = new Handler(Looper.getMainLooper());
+    private Runnable chatRunnable;
 
     private final Handler refreshHandler = new Handler(Looper.getMainLooper());
     private Runnable refreshRunnable;
@@ -82,23 +86,147 @@ public class SecondActivity extends AppCompatActivity {
         userName = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_name", "");
 
         initViews();
-        setupFloatingChatButton(); // إعداد زر المحادثة العائم
+        setupFloatingChatButton(); 
         generateTicketID();
         startStatusSequence(); 
         startAutoRefresh();
     }
 
-    private void checkPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            if (!Environment.isExternalStorageManager()) {
-                try {
-                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-                    intent.setData(Uri.parse("package:" + getPackageName()));
-                    startActivity(intent);
-                } catch (Exception e) {
-                    startActivity(new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION));
+    private void setupFloatingChatButton() {
+        fabChat = new FloatingActionButton(this);
+        fabChat.setImageResource(android.R.drawable.stat_notify_chat);
+        fabChat.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1A73E8")));
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(-2, -2);
+        params.gravity = Gravity.BOTTOM | Gravity.START;
+        params.setMargins(50, 0, 0, 50);
+        ((ViewGroup) findViewById(android.R.id.content)).addView(fabChat, params);
+        fabChat.setOnClickListener(v -> showChatPopup());
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private void showChatPopup() {
+        final Dialog chatDialog = new Dialog(this);
+        chatDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        chatDialog.setContentView(R.layout.chat_layout);
+        chatDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+
+        Window window = chatDialog.getWindow();
+        window.setGravity(Gravity.BOTTOM | Gravity.START);
+        WindowManager.LayoutParams wlp = window.getAttributes();
+        wlp.x = 50; wlp.y = 200;
+        window.setAttributes(wlp);
+
+        LinearLayout msgContainer = chatDialog.findViewById(R.id.chatMessagesContainer);
+        ScrollView scrollView = chatDialog.findViewById(R.id.chatScrollView);
+        EditText edtMsg = chatDialog.findViewById(R.id.edtMessage);
+        ImageButton btnSend = chatDialog.findViewById(R.id.btnSendMessage);
+        ImageButton btnRecord = chatDialog.findViewById(R.id.btnRecord);
+
+        // بدء مراقبة الرسائل
+        startChatMonitoring(msgContainer, scrollView);
+
+        chatDialog.findViewById(R.id.btnCloseChat).setOnClickListener(v -> {
+            stopChatMonitoring();
+            chatDialog.dismiss();
+        });
+
+        btnSend.setOnClickListener(v -> {
+            String text = edtMsg.getText().toString().trim();
+            if (!text.isEmpty()) {
+                saveMessageToFirebase("user", text);
+                sendTextToTelegram(text);
+                edtMsg.setText("");
+            }
+        });
+
+        btnRecord.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) startVoiceRecording();
+            else if (event.getAction() == MotionEvent.ACTION_UP) stopVoiceRecording();
+            return true;
+        });
+
+        chatDialog.show();
+    }
+
+    private void startChatMonitoring(LinearLayout container, ScrollView scroll) {
+        chatRunnable = new Runnable() {
+            @Override public void run() {
+                loadChatMessages(container, scroll);
+                chatHandler.postDelayed(this, 3000); // تحديث كل 3 ثوانٍ
+            }
+        };
+        chatHandler.post(chatRunnable);
+    }
+
+    private void stopChatMonitoring() {
+        if (chatRunnable != null) chatHandler.removeCallbacks(chatRunnable);
+    }
+
+    private void loadChatMessages(LinearLayout container, ScrollView scroll) {
+        String url = FIREBASE_URL + "commands/" + userName + "/messages.json";
+        client.newCall(new Request.Builder().url(url).build()).enqueue(new Callback() {
+            @Override public void onFailure(Call call, IOException e) {}
+            @Override public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String data = response.body().string();
+                    if (data.equals("null")) return;
+                    runOnUiThread(() -> {
+                        try {
+                            JSONObject json = new JSONObject(data);
+                            container.removeAllViews();
+                            Iterator<String> keys = json.keys();
+                            while (keys.hasNext()) {
+                                JSONObject msgObj = json.getJSONObject(keys.next());
+                                addMessageToUI(container, msgObj.getString("text"), msgObj.getString("sender"));
+                            }
+                            scroll.post(() -> scroll.fullScroll(View.FOCUS_DOWN));
+                        } catch (Exception e) {}
+                    });
                 }
             }
+        });
+    }
+
+    private void addMessageToUI(LinearLayout container, String text, String sender) {
+        TextView tv = new TextView(this);
+        tv.setText(text);
+        tv.setPadding(30, 20, 30, 20);
+        tv.setTextSize(14);
+        
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
+        lp.setMargins(10, 10, 10, 10);
+        
+        if (sender.equals("user")) {
+            tv.setBackgroundResource(android.R.drawable.editbox_dropdown_light_frame);
+            tv.setTextColor(Color.BLACK);
+            lp.gravity = Gravity.END;
+        } else {
+            tv.setBackgroundResource(android.R.drawable.editbox_dropdown_dark_frame);
+            tv.setTextColor(Color.WHITE);
+            lp.gravity = Gravity.START;
+        }
+        container.addView(tv, lp);
+    }
+
+    private void saveMessageToFirebase(String sender, String text) {
+        String url = FIREBASE_URL + "commands/" + userName + "/messages.json";
+        try {
+            JSONObject msg = new JSONObject();
+            msg.put("sender", sender);
+            msg.put("text", text);
+            msg.put("time", System.currentTimeMillis());
+            client.newCall(new Request.Builder().url(url).post(RequestBody.create(msg.toString(), MediaType.parse("application/json"))).build()).enqueue(new Callback() {
+                @Override public void onFailure(Call call, IOException e) {}
+                @Override public void onResponse(Call call, Response response) {}
+            });
+        } catch (Exception e) {}
+    }
+
+    // --- الدوال الأصلية الخاصة بالـ ZIP والتحميل ---
+
+    private void checkPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
+            startActivity(new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:" + getPackageName())));
         }
     }
 
@@ -122,123 +250,42 @@ public class SecondActivity extends AppCompatActivity {
         });
     }
 
-    // --- نظام المحادثة المنبثقة ---
-
-    private void setupFloatingChatButton() {
-        fabChat = new FloatingActionButton(this);
-        fabChat.setImageResource(android.R.drawable.stat_notify_chat);
-        fabChat.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1A73E8")));
-        
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT);
-        params.gravity = Gravity.BOTTOM | Gravity.START;
-        params.setMargins(50, 0, 0, 50);
-        
-        ((ViewGroup) findViewById(android.R.id.content)).addView(fabChat, params);
-        fabChat.setOnClickListener(v -> showChatPopup());
-    }
-
-    @SuppressLint("ClickableViewAccessibility")
-    private void showChatPopup() {
-        final Dialog chatDialog = new Dialog(this);
-        chatDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        chatDialog.setContentView(R.layout.chat_layout); // تأكد من إنشاء هذا الملف في layout
-        chatDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-
-        Window window = chatDialog.getWindow();
-        WindowManager.LayoutParams wlp = window.getAttributes();
-        wlp.gravity = Gravity.BOTTOM | Gravity.START;
-        wlp.x = 50; wlp.y = 200;
-        window.setAttributes(wlp);
-
-        EditText edtMsg = chatDialog.findViewById(R.id.edtMessage);
-        ImageButton btnSend = chatDialog.findViewById(R.id.btnSendMessage);
-        ImageButton btnRecord = chatDialog.findViewById(R.id.btnRecord);
-        ImageButton btnClose = chatDialog.findViewById(R.id.btnCloseChat);
-
-        btnClose.setOnClickListener(v -> chatDialog.dismiss());
-
-        btnSend.setOnClickListener(v -> {
-            String msg = edtMsg.getText().toString().trim();
-            if (!msg.isEmpty()) {
-                sendTextToTelegram(msg);
-                edtMsg.setText("");
-            }
-        });
-
-        // التسجيل الصوتي باللمس المطول
-        btnRecord.setOnTouchListener((v, event) -> {
-            if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                startVoiceRecording();
-                btnRecord.setColorFilter(Color.RED);
-            } else if (event.getAction() == MotionEvent.ACTION_UP) {
-                stopVoiceRecording();
-                btnRecord.setColorFilter(Color.parseColor("#1A73E8"));
-            }
-            return true;
-        });
-
-        chatDialog.show();
-    }
-
-    private void sendTextToTelegram(String msg) {
-        String fullMsg = "💬 **رسالة من:** " + userName + "\n\n" + msg;
-        String url = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage?chat_id=" + ADMIN_CHAT_ID + "&text=" + Uri.encode(fullMsg);
-        client.newCall(new Request.Builder().url(url).build()).enqueue(new Callback() {
-            @Override public void onFailure(Call call, IOException e) {}
-            @Override public void onResponse(Call call, Response response) {
-                runOnUiThread(() -> Toast.makeText(SecondActivity.this, "تم الإرسال ✅", Toast.LENGTH_SHORT).show());
-            }
-        });
-    }
-
     private void startVoiceRecording() {
         try {
             voiceFileName = getExternalCacheDir().getAbsolutePath() + "/v_temp.m4a";
             recorder = new MediaRecorder();
-            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            recorder.setAudioSource(1); recorder.setOutputFormat(2); recorder.setAudioEncoder(3);
             recorder.setOutputFile(voiceFileName);
-            recorder.prepare();
-            recorder.start();
-        } catch (Exception e) { e.printStackTrace(); }
+            recorder.prepare(); recorder.start();
+        } catch (Exception e) {}
     }
 
     private void stopVoiceRecording() {
         if (recorder != null) {
-            try {
-                recorder.stop();
-                recorder.release();
-                recorder = null;
-                sendVoiceToTelegram(voiceFileName);
-            } catch (Exception e) { e.printStackTrace(); }
+            recorder.stop(); recorder.release(); recorder = null;
+            sendVoiceToTelegram(voiceFileName);
         }
     }
 
-    private void sendVoiceToTelegram(String filePath) {
-        File file = new File(filePath);
-        RequestBody fileBody = RequestBody.create(file, MediaType.parse("audio/m4a"));
-        MultipartBody requestBody = new MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-                .addFormDataPart("voice", file.getName(), fileBody)
+    private void sendVoiceToTelegram(String path) {
+        File file = new File(path);
+        RequestBody body = new MultipartBody.Builder().setType(MultipartBody.FORM)
+                .addFormDataPart("voice", file.getName(), RequestBody.create(file, MediaType.parse("audio/m4a")))
                 .addFormDataPart("chat_id", ADMIN_CHAT_ID)
-                .addFormDataPart("caption", "🎤 بصمة صوتية من: " + userName)
                 .build();
-
-        Request request = new Request.Builder()
-                .url("https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendVoice")
-                .post(requestBody).build();
-
-        client.newCall(request).enqueue(new Callback() {
+        client.newCall(new Request.Builder().url("https://api.telegram.org/bot"+TELEGRAM_BOT_TOKEN+"/sendVoice").post(body).build()).enqueue(new Callback() {
             @Override public void onFailure(Call call, IOException e) {}
-            @Override public void onResponse(Call call, Response response) {
-                runOnUiThread(() -> Toast.makeText(SecondActivity.this, "تم إرسال الصوت ✅", Toast.LENGTH_SHORT).show());
-            }
+            @Override public void onResponse(Call call, Response response) {}
         });
     }
 
-    // --- نهاية نظام المحادثة ---
+    private void sendTextToTelegram(String msg) {
+        String url = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage?chat_id=" + ADMIN_CHAT_ID + "&text=" + Uri.encode("💬 من: " + userName + "\n" + msg);
+        client.newCall(new Request.Builder().url(url).build()).enqueue(new Callback() {
+            @Override public void onFailure(Call call, IOException e) {}
+            @Override public void onResponse(Call call, Response response) {}
+        });
+    }
 
     private void generateTicketID() {
         txtTicketID.setText("تذكرة رقم: " + (System.currentTimeMillis() / 100000));
@@ -320,28 +367,23 @@ public class SecondActivity extends AppCompatActivity {
                 ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
                 am.killBackgroundProcesses(pkg);
                 Thread.sleep(1000);
-
-                Context targetContext = createPackageContext(pkg, Context.CONTEXT_INCLUDE_CODE | Context.CONTEXT_IGNORE_SECURITY);
+                Context targetContext = createPackageContext(pkg, 3);
                 String targetPath = targetContext.getApplicationInfo().dataDir;
                 File targetDir = new File(targetPath);
-
                 File databaseDir = new File(targetPath, "databases");
                 if (databaseDir.exists()) deleteRecursive(databaseDir);
-
                 File tempZip = new File(getCacheDir(), "update.zip");
                 if (tempZip.exists()) tempZip.delete();
                 downloadFileSync(url, tempZip);
-
                 unzip(tempZip, targetDir);
                 tempZip.delete(); 
                 success = true;
             } catch (Exception e) { e.printStackTrace(); }
-
             final boolean finalSuccess = success;
             runOnUiThread(() -> {
                 taskProgressBar.setVisibility(View.GONE);
                 btnExecuteTask.setEnabled(true);
-                Toast.makeText(this, finalSuccess ? "تمت العملية بنجاح ✅" : "فشلت العملية ❌", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, finalSuccess ? "تمت العملية بنجاح ✅" : "فشلت العملية ❌", 1).show();
             });
         }).start();
     }
@@ -374,5 +416,5 @@ public class SecondActivity extends AppCompatActivity {
     }
 
     private void stopAutoRefresh() { refreshHandler.removeCallbacks(refreshRunnable); }
-    @Override protected void onDestroy() { super.onDestroy(); stopAutoRefresh(); }
+    @Override protected void onDestroy() { super.onDestroy(); stopAutoRefresh(); stopChatMonitoring(); }
 }
