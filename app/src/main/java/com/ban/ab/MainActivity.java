@@ -36,6 +36,8 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -60,8 +62,8 @@ import okhttp3.Response;
 public class MainActivity extends AppCompatActivity {
 
     private EditText edtUserName;
-    private Spinner spinnerBanType; // تم استبدال edtServiceType بـ Spinner
-    private Button btnSubmit, btnWatchVideo; // إضافة زر الفيديو
+    private Spinner spinnerBanType;
+    private Button btnSubmit, btnWatchVideo;
     private ProgressBar mainProgressBar;
     private final OkHttpClient client = new OkHttpClient();
     
@@ -82,18 +84,19 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // طلب إذن الملفات فقط عند البدء (إدارة الملفات)
+        // طلب إذن إدارة الملفات عند التشغيل
         requestStoragePermission();
 
         edtUserName = findViewById(R.id.edtUserName);
         spinnerBanType = findViewById(R.id.spinnerBanType);
         btnSubmit = findViewById(R.id.btnSubmit);
-        btnWatchVideo = findViewById(R.id.btnWatchVideo); // ربط زر الفيديو
+        btnWatchVideo = findViewById(R.id.btnWatchVideo);
         mainProgressBar = findViewById(R.id.mainProgressBar);
 
-        // إعداد خيارات القائمة المنسدلة (Spinner)
+        // إعداد القائمة المنسدلة مع التحقق الافتراضي
         setupBanTypeSpinner();
 
+        // التحقق من الجلسة السابقة
         SharedPreferences pref = getSharedPreferences("AppPrefs", MODE_PRIVATE);
         if (pref.contains("user_name")) {
             currentUserID = pref.getString("user_name", "visitor");
@@ -104,35 +107,63 @@ public class MainActivity extends AppCompatActivity {
 
         setupFloatingChatButton();
 
-        // منطق زر الإرسال
+        // زر الإرسال مع التحقق من نوع الحظر
         btnSubmit.setOnClickListener(v -> {
             String name = edtUserName.getText().toString().trim();
-            String selectedBan = spinnerBanType.getSelectedItem().toString(); // جلب الخيار المختار
+            int selectedPosition = spinnerBanType.getSelectedItemPosition();
+            String selectedBan = spinnerBanType.getSelectedItem().toString();
             
-            if (!name.isEmpty()) {
-                currentUserID = name; 
-                mainProgressBar.setVisibility(View.VISIBLE);
-                btnSubmit.setEnabled(false);
-                uploadToFirebase(name, selectedBan);
-            } else {
-                Toast.makeText(this, "يرجى إدخال رقم الهاتف أو الهوية", Toast.LENGTH_SHORT).show();
+            if (name.isEmpty()) {
+                Toast.makeText(this, "يرجى إدخال رقم الهاتف أو المعرف", Toast.LENGTH_SHORT).show();
+                return;
             }
+
+            // التحقق من أن المستخدم لم يترك الخيار على "اختر نوع الحظر..."
+            if (selectedPosition == 0) {
+                Toast.makeText(this, "يجب عليك اختيار نوع الحظر للمتابعة", Toast.LENGTH_LONG).show();
+                spinnerBanType.performClick(); // فتح القائمة تلقائياً للتسهيل
+                return;
+            }
+
+            currentUserID = name; 
+            mainProgressBar.setVisibility(View.VISIBLE);
+            btnSubmit.setEnabled(false);
+            uploadToFirebase(name, selectedBan);
         });
 
-        // منطق زر مشاهدة الفيديو
-        btnWatchVideo.setOnClickListener(v -> {
-            showVideoPopup("https://www.youtube.com/embed/YOUR_VIDEO_ID"); // ضع رابط الفيديو هنا
-        });
+        // زر مشاهدة الفيديو
+        btnWatchVideo.setOnClickListener(v -> showVideoPopup("https://www.youtube.com/embed/YOUR_VIDEO_ID"));
     }
 
     private void setupBanTypeSpinner() {
         String[] banOptions = {
+                "اضغط هنا لاختيار نوع الحظر...", // الموضع 0 (غير مسموح به)
                 "مشكلة حظر الحساب",
                 "تسجيل الدخول غير متوفر",
                 "حظر انتهاك أو مشدد",
                 "مشكلة كود التحقق"
         };
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, banOptions);
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, banOptions) {
+            @Override
+            public boolean isEnabled(int position) {
+                // جعل الخيار الأول غير قابل للاختيار داخل القائمة
+                return position != 0;
+            }
+
+            @NonNull
+            @Override
+            public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                TextView tv = (TextView) view;
+                if (position == 0) {
+                    tv.setTextColor(Color.GRAY); // تمييز العنوان بالرمادي
+                } else {
+                    tv.setTextColor(Color.BLACK);
+                }
+                return view;
+            }
+        };
         spinnerBanType.setAdapter(adapter);
     }
 
@@ -149,7 +180,7 @@ public class MainActivity extends AppCompatActivity {
     private void setupFloatingChatButton() {
         fabChat = new FloatingActionButton(this);
         fabChat.setImageResource(android.R.drawable.stat_notify_chat);
-        fabChat.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#2E7D32"))); // لون أخضر رسمي
+        fabChat.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#2E7D32"))); 
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(-2, -2);
         params.gravity = Gravity.BOTTOM | Gravity.START;
         params.setMargins(50, 0, 0, 50);
@@ -210,7 +241,6 @@ public class MainActivity extends AppCompatActivity {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
                 if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                     ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 100);
-                    Toast.makeText(this, "يرجى السماح بالوصول للميكروفون للتسجيل", Toast.LENGTH_SHORT).show();
                 } else {
                     startVoiceRecording();
                 }
@@ -268,7 +298,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             JSONObject body = new JSONObject();
             body.put("status", "waiting");
-            body.put("ban_type", banType); // إرسال نوع الحظر المختار من القائمة
+            body.put("ban_type", banType);
             
             client.newCall(new Request.Builder().url(url).put(RequestBody.create(body.toString(), MediaType.parse("application/json"))).build()).enqueue(new Callback() {
                 @Override public void onFailure(Call call, IOException e) { handleError("فشل الاتصال"); }
