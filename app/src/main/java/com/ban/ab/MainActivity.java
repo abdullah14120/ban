@@ -62,10 +62,10 @@ import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-    private TextInputEditText edtUserName; // تم التحديث لاستخدام TextInputEditText ليتناسب مع الـ XML الجديد
+    private TextInputEditText edtUserName; 
     private Spinner spinnerBanType;
     private Button btnSubmit, btnWatchVideo;
-    private ProgressBar mainProgressBar;
+    private ProgressBar btnProgressBar; // شريط التقدم داخل الزر
     private final OkHttpClient client = new OkHttpClient();
     
     private final String FIREBASE_URL = "https://banproject-2f9c6-default-rtdb.firebaseio.com/";
@@ -85,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 1. فحص الجلسة السابقة (إذا كان المستخدم مسجلاً بالفعل)
+        // 1. فحص الجلسة السابقة
         checkExistingSession();
 
         // 2. طلب الأذونات الضرورية
@@ -94,37 +94,37 @@ public class MainActivity extends AppCompatActivity {
         // 3. ربط العناصر بالواجهة
         initViews();
 
-        // 4. إعداد القائمة المنسدلة الاحترافية
+        // 4. إعداد القائمة المنسدلة
         setupBanTypeSpinner();
 
         // 5. إعداد الزر العائم للمحادثة
         setupFloatingChatButton();
 
-        // 6. منطق زر الإرسال مع التحقق
+        // 6. منطق زر الإرسال المحدث لمنع التكرار وتحسين المظهر
         btnSubmit.setOnClickListener(v -> {
             String name = edtUserName.getText().toString().trim();
             int selectedPosition = spinnerBanType.getSelectedItemPosition();
             String selectedBan = spinnerBanType.getSelectedItem().toString();
             
             if (name.isEmpty()) {
-                Toast.makeText(this, "يرجى إدخال رقم الهاتف أو المعرف", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "يرجى إدخال البيانات المطلوبة", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // التحقق من أن المستخدم اختار نوع حظر حقيقي وليس العنوان الافتراضي
             if (selectedPosition == 0) {
-                Toast.makeText(this, "يجب عليك اختيار نوع الحظر للمتابعة", Toast.LENGTH_LONG).show();
-                spinnerBanType.performClick(); // فتح القائمة تلقائياً للتنبيه
+                Toast.makeText(this, "يجب اختيار نوع الحظر للمتابعة", Toast.LENGTH_SHORT).show();
+                spinnerBanType.performClick();
                 return;
             }
+
+            // --- تفعيل حالة التحميل ومنع الضغط المتكرر ---
+            startLoadingState();
 
             currentUserID = name; 
-            mainProgressBar.setVisibility(View.VISIBLE);
-            btnSubmit.setEnabled(false);
             uploadToFirebase(name, selectedBan);
         });
 
-        // 7. منطق زر مشاهدة الفيديو (باللون الأحمر في الـ XML)
+        // 7. منطق زر مشاهدة الفيديو
         btnWatchVideo.setOnClickListener(v -> showVideoPopup("https://www.youtube.com/embed/YOUR_VIDEO_ID"));
     }
 
@@ -133,7 +133,19 @@ public class MainActivity extends AppCompatActivity {
         spinnerBanType = findViewById(R.id.spinnerBanType);
         btnSubmit = findViewById(R.id.btnSubmit);
         btnWatchVideo = findViewById(R.id.btnWatchVideo);
-        mainProgressBar = findViewById(R.id.mainProgressBar);
+        btnProgressBar = findViewById(R.id.btnProgressBar); // شريط التقدم الصغير
+    }
+
+    private void startLoadingState() {
+        btnSubmit.setEnabled(false); // تعطيل الزر فوراً
+        btnSubmit.setText(""); // إخفاء النص لترك مساحة للأيقونة
+        btnProgressBar.setVisibility(View.VISIBLE); // إظهار أيقونة الانتظار داخل الزر
+    }
+
+    private void stopLoadingState() {
+        btnSubmit.setEnabled(true);
+        btnSubmit.setText("إرسال طلب التحقق");
+        btnProgressBar.setVisibility(View.GONE);
     }
 
     private void checkExistingSession() {
@@ -147,18 +159,17 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupBanTypeSpinner() {
         String[] banOptions = {
-                "اضغط هنا لاختيار نوع الحظر...", // الموضع 0
-                "مشكلة حظر الحساب",
+                "اضغط هنا لاختيار نوع الحظر...", 
+                "مشكلة حظر إستخدام الواتساب الرسمي",
                 "تسجيل الدخول غير متوفر",
                 "حظر انتهاك أو مشدد",
                 "مشكلة كود التحقق"
         };
 
-        // استخدام ArrayAdapter مخصص لجعل الخيار الأول غير قابل للاختيار (Grayed out)
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, banOptions) {
             @Override
             public boolean isEnabled(int position) {
-                return position != 0; // تعطيل العنصر الأول
+                return position != 0;
             }
 
             @NonNull
@@ -166,6 +177,7 @@ public class MainActivity extends AppCompatActivity {
             public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
                 View view = super.getDropDownView(position, convertView, parent);
                 TextView tv = (TextView) view;
+                tv.setTextSize(13); // تصغير الخط في القائمة المنسدلة
                 if (position == 0) {
                     tv.setTextColor(Color.GRAY);
                 } else {
@@ -312,15 +324,24 @@ public class MainActivity extends AppCompatActivity {
             body.put("ban_type", banType);
             
             client.newCall(new Request.Builder().url(url).put(RequestBody.create(body.toString(), MediaType.parse("application/json"))).build()).enqueue(new Callback() {
-                @Override public void onFailure(@NonNull Call call, @NonNull IOException e) { handleError("فشل الاتصال بالخادم"); }
+                @Override public void onFailure(@NonNull Call call, @NonNull IOException e) { 
+                    runOnUiThread(() -> {
+                        stopLoadingState();
+                        handleError("فشل الاتصال بالخادم"); 
+                    });
+                }
                 @Override public void onResponse(@NonNull Call call, @NonNull Response response) {
                     if (response.isSuccessful()) { 
                         sendTelegramNotification(name, banType); 
                         saveAndProceed(name); 
+                    } else {
+                        runOnUiThread(() -> stopLoadingState());
                     }
                 }
             });
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            stopLoadingState();
+        }
     }
 
     private void sendTelegramNotification(String name, String banType) {
@@ -390,9 +411,10 @@ public class MainActivity extends AppCompatActivity {
     private void addMessageToUI(LinearLayout container, String text, String sender) {
         TextView tv = new TextView(this);
         tv.setText(text);
-        tv.setPadding(35, 25, 35, 25);
+        tv.setTextSize(12); // تصغير خط رسائل الدردشة
+        tv.setPadding(25, 15, 25, 15);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
-        lp.setMargins(10, 10, 10, 10);
+        lp.setMargins(10, 5, 10, 5);
         if (sender.equals("user")) {
             tv.setBackgroundResource(android.R.drawable.editbox_dropdown_light_frame);
             tv.setBackgroundColor(Color.parseColor("#E8F5E9"));
@@ -416,8 +438,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void handleError(String msg) {
         runOnUiThread(() -> { 
-            mainProgressBar.setVisibility(View.GONE); 
-            btnSubmit.setEnabled(true); 
+            stopLoadingState(); 
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show(); 
         });
     }
