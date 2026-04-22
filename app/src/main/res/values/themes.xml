@@ -41,7 +41,7 @@
 
     <style name="WidgetFoundation.Button" parent="Widget.MaterialComponents.Button">
         <item name="android:layout_height">60dp</item>
-        <item name="app:cornerRadius">16dp</item>
+        <item name="cornerRadius">16dp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textAllCaps">false</item>
     </style>
