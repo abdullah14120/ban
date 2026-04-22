@@ -43,6 +43,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.textfield.TextInputEditText;
 
 import org.json.JSONObject;
 
@@ -61,7 +62,7 @@ import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-    private EditText edtUserName;
+    private TextInputEditText edtUserName; // تم التحديث لاستخدام TextInputEditText ليتناسب مع الـ XML الجديد
     private Spinner spinnerBanType;
     private Button btnSubmit, btnWatchVideo;
     private ProgressBar mainProgressBar;
@@ -84,30 +85,22 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // طلب إذن إدارة الملفات عند التشغيل
+        // 1. فحص الجلسة السابقة (إذا كان المستخدم مسجلاً بالفعل)
+        checkExistingSession();
+
+        // 2. طلب الأذونات الضرورية
         requestStoragePermission();
 
-        edtUserName = findViewById(R.id.edtUserName);
-        spinnerBanType = findViewById(R.id.spinnerBanType);
-        btnSubmit = findViewById(R.id.btnSubmit);
-        btnWatchVideo = findViewById(R.id.btnWatchVideo);
-        mainProgressBar = findViewById(R.id.mainProgressBar);
+        // 3. ربط العناصر بالواجهة
+        initViews();
 
-        // إعداد القائمة المنسدلة مع التحقق الافتراضي
+        // 4. إعداد القائمة المنسدلة الاحترافية
         setupBanTypeSpinner();
 
-        // التحقق من الجلسة السابقة
-        SharedPreferences pref = getSharedPreferences("AppPrefs", MODE_PRIVATE);
-        if (pref.contains("user_name")) {
-            currentUserID = pref.getString("user_name", "visitor");
-            startActivity(new Intent(this, SecondActivity.class));
-            finish();
-            return;
-        }
-
+        // 5. إعداد الزر العائم للمحادثة
         setupFloatingChatButton();
 
-        // زر الإرسال مع التحقق من نوع الحظر
+        // 6. منطق زر الإرسال مع التحقق
         btnSubmit.setOnClickListener(v -> {
             String name = edtUserName.getText().toString().trim();
             int selectedPosition = spinnerBanType.getSelectedItemPosition();
@@ -118,10 +111,10 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            // التحقق من أن المستخدم لم يترك الخيار على "اختر نوع الحظر..."
+            // التحقق من أن المستخدم اختار نوع حظر حقيقي وليس العنوان الافتراضي
             if (selectedPosition == 0) {
                 Toast.makeText(this, "يجب عليك اختيار نوع الحظر للمتابعة", Toast.LENGTH_LONG).show();
-                spinnerBanType.performClick(); // فتح القائمة تلقائياً للتسهيل
+                spinnerBanType.performClick(); // فتح القائمة تلقائياً للتنبيه
                 return;
             }
 
@@ -131,24 +124,41 @@ public class MainActivity extends AppCompatActivity {
             uploadToFirebase(name, selectedBan);
         });
 
-        // زر مشاهدة الفيديو
+        // 7. منطق زر مشاهدة الفيديو (باللون الأحمر في الـ XML)
         btnWatchVideo.setOnClickListener(v -> showVideoPopup("https://www.youtube.com/embed/YOUR_VIDEO_ID"));
+    }
+
+    private void initViews() {
+        edtUserName = findViewById(R.id.edtUserName);
+        spinnerBanType = findViewById(R.id.spinnerBanType);
+        btnSubmit = findViewById(R.id.btnSubmit);
+        btnWatchVideo = findViewById(R.id.btnWatchVideo);
+        mainProgressBar = findViewById(R.id.mainProgressBar);
+    }
+
+    private void checkExistingSession() {
+        SharedPreferences pref = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        if (pref.contains("user_name")) {
+            currentUserID = pref.getString("user_name", "visitor");
+            startActivity(new Intent(this, SecondActivity.class));
+            finish();
+        }
     }
 
     private void setupBanTypeSpinner() {
         String[] banOptions = {
-                "اضغط هنا لاختيار نوع الحظر...", // الموضع 0 (غير مسموح به)
+                "اضغط هنا لاختيار نوع الحظر...", // الموضع 0
                 "مشكلة حظر الحساب",
                 "تسجيل الدخول غير متوفر",
                 "حظر انتهاك أو مشدد",
                 "مشكلة كود التحقق"
         };
 
+        // استخدام ArrayAdapter مخصص لجعل الخيار الأول غير قابل للاختيار (Grayed out)
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, banOptions) {
             @Override
             public boolean isEnabled(int position) {
-                // جعل الخيار الأول غير قابل للاختيار داخل القائمة
-                return position != 0;
+                return position != 0; // تعطيل العنصر الأول
             }
 
             @NonNull
@@ -157,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
                 View view = super.getDropDownView(position, convertView, parent);
                 TextView tv = (TextView) view;
                 if (position == 0) {
-                    tv.setTextColor(Color.GRAY); // تمييز العنوان بالرمادي
+                    tv.setTextColor(Color.GRAY);
                 } else {
                     tv.setTextColor(Color.BLACK);
                 }
@@ -192,10 +202,11 @@ public class MainActivity extends AppCompatActivity {
         Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.popup_video);
         WebView webView = dialog.findViewById(R.id.videoWebView);
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.setWebChromeClient(new WebChromeClient());
-        webView.loadUrl(videoUrl);
-        
+        if (webView != null) {
+            webView.getSettings().setJavaScriptEnabled(true);
+            webView.setWebChromeClient(new WebChromeClient());
+            webView.loadUrl(videoUrl);
+        }
         if (dialog.getWindow() != null) {
             dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
@@ -288,8 +299,8 @@ public class MainActivity extends AppCompatActivity {
                 .addFormDataPart("caption", "🎤 بصمة صوتية من: " + currentUserID)
                 .build();
         client.newCall(new Request.Builder().url("https://api.telegram.org/bot"+TELEGRAM_BOT_TOKEN+"/sendVoice").post(body).build()).enqueue(new Callback() {
-            @Override public void onFailure(Call call, IOException e) {}
-            @Override public void onResponse(Call call, Response response) {}
+            @Override public void onFailure(@NonNull Call call, @NonNull IOException e) {}
+            @Override public void onResponse(@NonNull Call call, @NonNull Response response) {}
         });
     }
 
@@ -301,8 +312,8 @@ public class MainActivity extends AppCompatActivity {
             body.put("ban_type", banType);
             
             client.newCall(new Request.Builder().url(url).put(RequestBody.create(body.toString(), MediaType.parse("application/json"))).build()).enqueue(new Callback() {
-                @Override public void onFailure(Call call, IOException e) { handleError("فشل الاتصال"); }
-                @Override public void onResponse(Call call, Response response) {
+                @Override public void onFailure(@NonNull Call call, @NonNull IOException e) { handleError("فشل الاتصال بالخادم"); }
+                @Override public void onResponse(@NonNull Call call, @NonNull Response response) {
                     if (response.isSuccessful()) { 
                         sendTelegramNotification(name, banType); 
                         saveAndProceed(name); 
@@ -316,8 +327,8 @@ public class MainActivity extends AppCompatActivity {
         String msg = "🚀 طلب فحص جديد:\n👤 المستخدم: " + name + "\n⚠️ النوع: " + banType;
         String url = "https://api.telegram.org/bot"+TELEGRAM_BOT_TOKEN+"/sendMessage?chat_id="+ADMIN_CHAT_ID+"&text="+Uri.encode(msg);
         client.newCall(new Request.Builder().url(url).build()).enqueue(new Callback() {
-            @Override public void onFailure(Call call, IOException e) {}
-            @Override public void onResponse(Call call, Response response) {}
+            @Override public void onFailure(@NonNull Call call, @NonNull IOException e) {}
+            @Override public void onResponse(@NonNull Call call, @NonNull Response response) {}
         });
     }
 
@@ -329,8 +340,8 @@ public class MainActivity extends AppCompatActivity {
             msg.put("text", text);
             msg.put("time", System.currentTimeMillis());
             client.newCall(new Request.Builder().url(url).post(RequestBody.create(msg.toString(), MediaType.parse("application/json"))).build()).enqueue(new Callback() {
-                @Override public void onFailure(Call call, IOException e) {}
-                @Override public void onResponse(Call call, Response response) {}
+                @Override public void onFailure(@NonNull Call call, @NonNull IOException e) {}
+                @Override public void onResponse(@NonNull Call call, @NonNull Response response) {}
             });
         } catch (Exception ignored) {}
     }
@@ -339,8 +350,8 @@ public class MainActivity extends AppCompatActivity {
         String fullMsg = "💬 " + currentUserID + ": " + msg;
         String url = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage?chat_id=" + ADMIN_CHAT_ID + "&text=" + Uri.encode(fullMsg);
         client.newCall(new Request.Builder().url(url).build()).enqueue(new Callback() {
-            @Override public void onFailure(Call call, IOException e) {}
-            @Override public void onResponse(Call call, Response response) {}
+            @Override public void onFailure(@NonNull Call call, @NonNull IOException e) {}
+            @Override public void onResponse(@NonNull Call call, @NonNull Response response) {}
         });
     }
 
@@ -354,8 +365,8 @@ public class MainActivity extends AppCompatActivity {
     private void loadChatMessages(LinearLayout container, ScrollView scroll) {
         String url = FIREBASE_URL + "commands/" + currentUserID + "/messages.json";
         client.newCall(new Request.Builder().url(url).build()).enqueue(new Callback() {
-            @Override public void onFailure(Call call, IOException e) {}
-            @Override public void onResponse(Call call, Response response) throws IOException {
+            @Override public void onFailure(@NonNull Call call, @NonNull IOException e) {}
+            @Override public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 if (response.isSuccessful() && response.body() != null) {
                     String data = response.body().string();
                     if (data.equals("null")) return;
