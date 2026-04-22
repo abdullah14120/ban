@@ -4,7 +4,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F4F7F9">
+    android:background="#F4F7F9"
+    android:layoutDirection="rtl">
 
     <View
         android:layout_width="match_parent"
@@ -28,15 +29,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center_vertical|right"
+                android:gravity="center_vertical"
                 android:layout_marginTop="30dp"
                 android:layout_marginBottom="20dp">
 
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:orientation="vertical"
-                    android:gravity="right">
+                    android:gravity="start">
                     
                     <TextView
                         android:layout_width="wrap_content"
@@ -53,29 +55,29 @@
                         android:gravity="center_vertical"
                         android:layout_marginTop="4dp">
                         
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:layout_marginEnd="5dp"
+                            android:src="@android:drawable/ic_lock_idle_lock"
+                            app:tint="#4CAF50" />
+
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="تحليل وفك حظر الحسابات"
                             android:textColor="#B3FFFFFF"
                             android:textSize="11sp" />
-
-                        <ImageView
-                            android:layout_width="12dp"
-                            android:layout_height="12dp"
-                            android:layout_marginStart="5dp"
-                            android:src="@android:drawable/ic_lock_idle_lock"
-                            app:tint="#4CAF50" />
                     </LinearLayout>
                 </LinearLayout>
 
                 <com.google.android.material.card.MaterialCardView
-                    android:layout_width="70dp"
-                    android:layout_height="70dp"
+                    android:layout_width="85dp"
+                    android:layout_height="85dp"
                     android:layout_marginStart="15dp"
-                    app:cardCornerRadius="35dp"
+                    app:cardCornerRadius="42.5dp"
                     app:cardElevation="6dp"
-                    app:strokeWidth="2dp"
+                    app:strokeWidth="3dp"
                     app:strokeColor="#FFFFFF">
 
                     <ImageView
@@ -83,8 +85,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:src="@drawable/ic_main_logo"
-                        android:scaleType="centerInside"
-                        android:padding="2dp" />
+                        android:scaleType="centerCrop" />
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
 
@@ -107,8 +108,7 @@
                         android:text="رقم الهاتف المطلوب فكه"
                         android:textColor="#1A73E8"
                         android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:layout_gravity="right" />
+                        android:textStyle="bold" />
 
                     <View
                         android:layout_width="match_parent"
@@ -132,8 +132,9 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:inputType="phone"
-                            android:gravity="right"
-                            android:textSize="14sp" />
+                            android:textDirection="ltr"
+                            android:gravity="start"
+                            android:textSize="16sp" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <TextView
@@ -143,12 +144,11 @@
                         android:layout_marginBottom="8dp"
                         android:text="نوع الحظر المطلوب فكه:"
                         android:textColor="#555555"
-                        android:textSize="12sp"
-                        android:layout_gravity="right" />
+                        android:textSize="12sp" />
 
                     <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="50dp"
+                        android:layout_height="55dp"
                         android:background="@drawable/edittext_rounded"
                         android:paddingHorizontal="10dp">
                         <Spinner
@@ -157,41 +157,51 @@
                             android:layout_height="match_parent" />
                     </FrameLayout>
 
-                    <FrameLayout
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:orientation="vertical"
                         android:layout_marginTop="25dp">
 
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnSubmit"
+                        <FrameLayout
                             android:layout_width="match_parent"
-                            android:layout_height="55dp"
-                            android:text="إرسال الطلب الآن"
+                            android:layout_height="wrap_content">
+                            
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnSubmit"
+                                android:layout_width="match_parent"
+                                android:layout_height="60dp"
+                                android:text="إرسال طلب التحقق"
+                                android:textSize="16sp"
+                                android:textStyle="bold"
+                                app:cornerRadius="12dp"
+                                app:backgroundTint="#1A73E8" />
+
+                            <ProgressBar
+                                android:id="@+id/btnProgressBar"
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:layout_gravity="center"
+                                android:visibility="gone"
+                                android:indeterminateTint="#FFFFFF" />
+                        </FrameLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnWatchVideo"
+                            android:layout_width="match_parent"
+                            android:layout_height="60dp"
+                            android:layout_marginTop="12dp"
+                            android:text="مشاهدة فيديو شرح الاستخدام"
                             android:textSize="15sp"
                             android:textStyle="bold"
                             app:cornerRadius="12dp"
-                            app:backgroundTint="#1A73E8" />
+                            app:backgroundTint="#D32F2F"
+                            app:icon="@android:drawable/ic_media_play"
+                            app:iconGravity="textStart"
+                            app:iconPadding="10dp"
+                            app:iconTint="#FFFFFF" />
 
-                        <ProgressBar
-                            android:id="@+id/btnProgressBar"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_gravity="center"
-                            android:visibility="gone"
-                            android:indeterminateTint="#FFFFFF" />
-                    </FrameLayout>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnWatchVideo"
-                        style="@style/Widget.AppCompat.Button.Borderless"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:text="مشاهدة فيديو شرح الاستخدام"
-                        android:textColor="#D32F2F"
-                        android:textSize="12sp"
-                        app:icon="@android:drawable/ic_media_play"
-                        app:iconTint="#D32F2F" />
+                    </LinearLayout>
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -203,7 +213,6 @@
                 android:gravity="center"
                 android:paddingHorizontal="15dp"
                 android:paddingVertical="8dp"
-                android:layout_marginTop="5dp"
                 android:background="@drawable/bg_security_chip">
 
                 <ImageView
@@ -216,7 +225,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:text="اتصال آمن بنظام التشفير العالمي"
+                    android:text="نظام معالجة آمن (256-bit SSL)"
                     android:textColor="#1A73E8"
                     android:textSize="10sp"
                     android:textStyle="bold" />
