@@ -4,86 +4,116 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F4F7F5">
+    android:background="#F4F7F9">
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:background="@drawable/main_gradient_shape" />
+        android:layout_height="260dp"
+        android:background="@drawable/gradient_header" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
-        android:paddingBottom="@dimen/l3">
+        android:paddingBottom="30dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center_horizontal"
-            android:padding="@dimen/l1">
+            android:padding="20dp">
 
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:layout_marginTop="40dp"
-                app:cardCornerRadius="60dp"
-                app:cardElevation="8dp"
-                app:strokeWidth="4dp"
-                app:strokeColor="#FFFFFF">
-
-                <ImageView
-                    android:id="@+id/imgLogo"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/ic_main_logo"
-                    android:scaleType="centerInside"
-                    android:padding="2dp" />
-            </com.google.android.material.card.MaterialCardView>
-
-            <TextView
-                style="@style/AppearanceFoundation.Headline"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="الدعم الفني لـ الواتساب"
-                android:textColor="#FFFFFF"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical|right"
+                android:layout_marginTop="30dp"
+                android:layout_marginBottom="20dp">
 
-            <TextView
-                style="@style/AppearanceFoundation.Caption"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="تحليل وفك حظر الحسابات عبر بروتوكول آمن"
-                android:textColor="#E0E0E0"
-                android:textSize="12sp" />
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="right">
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="الدعم الفني للواتساب"
+                        android:textColor="#FFFFFF"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginTop="4dp">
+                        
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="تحليل وفك حظر الحسابات"
+                            android:textColor="#B3FFFFFF"
+                            android:textSize="11sp" />
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:layout_marginStart="5dp"
+                            android:src="@android:drawable/ic_lock_idle_lock"
+                            app:tint="#4CAF50" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="70dp"
+                    android:layout_height="70dp"
+                    android:layout_marginStart="15dp"
+                    app:cardCornerRadius="35dp"
+                    app:cardElevation="6dp"
+                    app:strokeWidth="2dp"
+                    app:strokeColor="#FFFFFF">
+
+                    <ImageView
+                        android:id="@+id/imgLogo"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/ic_main_logo"
+                        android:scaleType="centerInside"
+                        android:padding="2dp" />
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
 
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                app:cardCornerRadius="24dp"
-                app:cardElevation="10dp">
+                app:cardCornerRadius="18dp"
+                app:cardElevation="10dp"
+                app:cardUseCompatPadding="true">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="24dp">
+                    android:padding="22dp">
 
                     <TextView
-                        style="@style/AppearanceFoundation.Title"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="رقم الهاتف المحظور"
-                        android:textSize="14sp" />
+                        android:text="رقم الهاتف المطلوب فكه"
+                        android:textColor="#1A73E8"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:layout_gravity="right" />
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="10dp"
                         android:layout_marginBottom="20dp"
                         android:background="#F0F0F0" />
 
@@ -91,7 +121,7 @@
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="أدخل رقم الهاتف مع رمز الدولة"
+                        android:hint="أدخل رقم الهاتف"
                         app:boxCornerRadiusTopStart="12dp"
                         app:boxCornerRadiusTopEnd="12dp"
                         app:boxCornerRadiusBottomStart="12dp"
@@ -102,23 +132,25 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:inputType="phone"
+                            android:gravity="right"
                             android:textSize="14sp" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <TextView
-                        style="@style/AppearanceFoundation.Caption.Primary"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
+                        android:layout_marginTop="18dp"
                         android:layout_marginBottom="8dp"
                         android:text="نوع الحظر المطلوب فكه:"
-                        android:textSize="12sp" />
+                        android:textColor="#555555"
+                        android:textSize="12sp"
+                        android:layout_gravity="right" />
 
                     <FrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="50dp"
-                        android:background="@drawable/edittext_rounded_green"
-                        android:paddingHorizontal="12dp">
+                        android:background="@drawable/edittext_rounded"
+                        android:paddingHorizontal="10dp">
                         <Spinner
                             android:id="@+id/spinnerBanType"
                             android:layout_width="match_parent"
@@ -128,14 +160,17 @@
                     <FrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="24dp">
+                        android:layout_marginTop="25dp">
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnSubmit"
-                            style="@style/WidgetFoundation.Button"
                             android:layout_width="match_parent"
-                            android:text="إرسال طلب فك الحظر"
-                            app:backgroundTint="#2E7D32" />
+                            android:layout_height="55dp"
+                            android:text="إرسال الطلب الآن"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            app:cornerRadius="12dp"
+                            app:backgroundTint="#1A73E8" />
 
                         <ProgressBar
                             android:id="@+id/btnProgressBar"
@@ -148,11 +183,15 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnWatchVideo"
-                        style="@style/WidgetFoundation.Button.Video"
+                        style="@style/Widget.AppCompat.Button.Borderless"
                         android:layout_width="match_parent"
-                        android:layout_marginTop="8dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
                         android:text="مشاهدة فيديو شرح الاستخدام"
-                        android:textSize="12sp" />
+                        android:textColor="#D32F2F"
+                        android:textSize="12sp"
+                        app:icon="@android:drawable/ic_media_play"
+                        app:iconTint="#D32F2F" />
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -162,23 +201,23 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center"
-                android:paddingHorizontal="16dp"
+                android:paddingHorizontal="15dp"
                 android:paddingVertical="8dp"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="5dp"
                 android:background="@drawable/bg_security_chip">
 
                 <ImageView
                     android:layout_width="14dp"
                     android:layout_height="14dp"
                     android:src="@android:drawable/ic_lock_lock"
-                    app:tint="#2E7D32" />
+                    app:tint="#1A73E8" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:text="بياناتك مشفرة ولا يتم مشاركتها"
-                    android:textColor="#2E7D32"
+                    android:text="اتصال آمن بنظام التشفير العالمي"
+                    android:textColor="#1A73E8"
                     android:textSize="10sp"
                     android:textStyle="bold" />
             </LinearLayout>
