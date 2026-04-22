@@ -1,166 +1,185 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F4F7F5"
-    android:id="@+id/main_root_layout">
+    android:background="#F4F7F5">
 
-    <View
-        android:id="@+id/mainHeaderBackground"
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="280dp"
-        android:background="@drawable/gradient_header_green" />
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        app:elevation="0dp">
 
-    <ScrollView
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/main_toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="نظام الحماية المتقدم"
+            app:titleCentered="true"
+            app:titleTextAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scrollbars="none">
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp"
-            android:gravity="center_horizontal">
-
-            <ImageView
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:layout_marginTop="30dp"
-                android:src="@drawable/ic_support_shield"
-                app:tint="#FFFFFF" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="نظام الحماية المتقدم"
-                android:textColor="#FFFFFF"
-                android:textSize="26sp"
-                android:fontFamily="sans-serif-black"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="بوابة فك القيود والوصول الآمن"
-                android:textColor="#D1E7D1"
-                android:textSize="14sp" />
+            android:padding="16dp">
 
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="30dp"
                 app:cardCornerRadius="24dp"
-                app:cardElevation="15dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white"
                 app:strokeColor="#E0E0E0"
-                app:strokeWidth="1dp"
-                app:cardUseCompatPadding="true">
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="24dp">
+                    android:padding="20dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="right"
-                        android:text="رقم الهوية أو الحساب"
+                        android:text="بيانات الحساب"
                         android:textColor="#2E7D32"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="8dp" />
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
 
-                    <EditText
-                        android:id="@+id/edtUserName"
+                    <View
                         android:layout_width="match_parent"
-                        android:layout_height="58dp"
-                        android:background="@drawable/edittext_rounded_green"
-                        android:gravity="right"
-                        android:hint="أدخل الرقم المراد فصحه..."
-                        android:inputType="text"
-                        android:padding="14dp"
-                        android:textSize="16sp" />
+                        android:layout_height="1dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="#F0F0F0" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="رقم الهوية أو الحساب"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:startIconDrawable="@android:drawable/ic_menu_edit">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/edtUserName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="20dp"
-                        android:layout_gravity="right"
-                        android:text="نوع الحظر المكتشف"
-                        android:textColor="#2E7D32"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="8dp" />
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="نوع الحظر المطلوب فكه:"
+                        android:textColor="#666666"
+                        android:textSize="14sp" />
 
-                    <Spinner
-                        android:id="@+id/spinnerBanType"
+                    <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="58dp"
+                        android:layout_height="55dp"
                         android:background="@drawable/edittext_rounded_green"
-                        android:padding="5dp" />
+                        android:padding="4dp">
+                        <Spinner
+                            android:id="@+id/spinnerBanType"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:spinnerMode="dropdown" />
+                    </FrameLayout>
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSubmit"
                         android:layout_width="match_parent"
-                        android:layout_height="64dp"
-                        android:layout_marginTop="30dp"
-                        android:text="إرسال طلب فك الحظر"
-                        android:textSize="18sp"
+                        android:layout_height="60dp"
+                        android:layout_marginTop="24dp"
+                        android:text="إرسال طلب التحقق"
+                        android:textSize="16sp"
                         android:textStyle="bold"
                         app:cornerRadius="16dp"
-                        app:backgroundTint="#1B5E20"
-                        app:elevation="8dp" />
+                        app:backgroundTint="#2E7D32" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnWatchVideo"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
                         android:layout_width="match_parent"
-                        android:layout_height="54dp"
-                        android:layout_marginTop="12dp"
-                        android:text="مشاهدة شرح فيديو للطريقة"
-                        android:textColor="#FFFFFF"
-                        app:cornerRadius="16dp"
-                        app:backgroundTint="#D32F2F"
+                        android:layout_height="55dp"
+                        android:layout_marginTop="8dp"
+                        android:text="مشاهدة فيديو شرح الطريقة"
+                        android:textColor="#D32F2F"
                         app:icon="@android:drawable/ic_media_play"
-                        app:iconGravity="textStart"
-                        app:iconTint="#FFFFFF" />
+                        app:iconTint="#D32F2F" />
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <LinearLayout
-                android:layout_width="wrap_content"
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="20dp"
-                android:gravity="center"
-                android:orientation="horizontal">
+                android:layout_marginTop="16dp"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="1dp"
+                app:cardBackgroundColor="#E8F5E9">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="اتصال مشفر وآمن تماماً عبر خوادم SSL"
-                    android:textColor="#9E9E9E"
-                    android:textSize="11sp" />
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
 
-                <ImageView
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:layout_marginStart="5dp"
-                    android:src="@android:drawable/ic_lock_lock"
-                    app:tint="#2E7D32" />
-            </LinearLayout>
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@android:drawable/ic_lock_lock"
+                        app:tint="#2E7D32" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="اتصال آمن ومحمي"
+                            android:textColor="#1B5E20"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="بياناتك مشفرة ولا يتم مشاركتها مع أي طرف ثالث"
+                            android:textSize="12sp"
+                            android:textColor="#666666" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
     <ProgressBar
         android:id="@+id/mainProgressBar"
-        android:layout_width="55dp"
-        android:layout_height="55dp"
-        android:layout_centerInParent="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
         android:visibility="gone"
-        android:indeterminateTint="#1B5E20" />
+        android:indeterminateTint="#2E7D32" />
 
-</RelativeLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
