@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText; // تم التغيير إلى EditText العادي
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -16,8 +17,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.google.android.material.textfield.TextInputEditText;
 
 import org.json.JSONObject;
 
@@ -31,13 +30,14 @@ import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-    private TextInputEditText edtUserName; 
+    // استخدام EditText العادي لمنع الانهيار (InflateException)
+    private EditText edtUserName; 
     private Spinner spinnerBanType;
     private Button btnSubmit;
     private ProgressBar btnProgressBar;
     private final OkHttpClient client = new OkHttpClient();
     
-    // الرابط الوحيد المطلوب للربط مع الآدمن عبر فايبربيز
+    // رابط قاعدة البيانات الخاص بك
     private final String FIREBASE_URL = "https://banproject-2f9c6-default-rtdb.firebaseio.com/";
 
     @Override
@@ -45,26 +45,33 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 1. فحص هل هناك مستخدم مسجل مسبقاً للانتقال لواجهة الانتظار
+        // 1. فحص الجلسة (إذا كان المستخدم مسجلاً مسبقاً ينتقل فوراً لشاشة الانتظار)
         checkExistingSession();
 
-        // 2. ربط عناصر الواجهة
+        // 2. ربط العناصر بالواجهة
         initViews();
 
-        // 3. إعداد خيارات نوع الحظر
+        // 3. إعداد القائمة المنسدلة (Spinner)
         setupBanTypeSpinner();
 
-        // 4. منطق تسجيل المستخدم وبدء العملية
+        // 4. منطق زر الإرسال
         btnSubmit.setOnClickListener(v -> {
             String name = edtUserName.getText().toString().trim();
             int selectedPosition = spinnerBanType.getSelectedItemPosition();
             String selectedBan = spinnerBanType.getSelectedItem().toString();
             
-            if (name.isEmpty() || selectedPosition == 0) {
-                Toast.makeText(this, "يرجى إكمال البيانات المطلوبة", Toast.LENGTH_SHORT).show();
+            // التحقق من الإدخال
+            if (name.isEmpty()) {
+                Toast.makeText(this, "يرجى إدخال رقم الهاتف", Toast.LENGTH_SHORT).show();
                 return;
             }
 
+            if (selectedPosition == 0) {
+                Toast.makeText(this, "يرجى اختيار نوع الحظر", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // بدء حالة التحميل وتعطيل الزر لمنع التكرار
             startLoadingState();
             registerUserWithAdmin(name, selectedBan);
         });
@@ -78,9 +85,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startLoadingState() {
-        btnSubmit.setEnabled(false);
-        btnSubmit.setText("");
-        btnProgressBar.setVisibility(View.VISIBLE);
+        btnSubmit.setEnabled(false); // تعطيل الزر
+        btnSubmit.setText(""); // إخفاء النص
+        btnProgressBar.setVisibility(View.VISIBLE); // إظهار الدائرة
     }
 
     private void stopLoadingState() {
@@ -108,13 +115,17 @@ public class MainActivity extends AppCompatActivity {
 
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, banOptions) {
             @Override
-            public boolean isEnabled(int position) { return position != 0; }
+            public boolean isEnabled(int position) { 
+                // تعطيل العنصر الأول (العنوان) ليصبح غير قابل للاختيار
+                return position != 0; 
+            }
 
             @NonNull
             @Override
             public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
                 View view = super.getDropDownView(position, convertView, parent);
                 TextView tv = (TextView) view;
+                // جعل العنوان باللون الرمادي والبقية بالأسود
                 tv.setTextColor(position == 0 ? Color.GRAY : Color.BLACK);
                 return view;
             }
@@ -123,22 +134,31 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void registerUserWithAdmin(String name, String banType) {
+        // إنشاء مسار المستخدم في Firebase
         String url = FIREBASE_URL + "commands/" + name + ".json";
+        
         try {
             JSONObject body = new JSONObject();
-            body.put("status", "waiting"); // وضع المستخدم في حالة الانتظار فوراً ليظهر للآدمن
+            body.put("status", "waiting"); // الحالة الابتدائية
             body.put("ban_type", banType);
             body.put("timestamp", System.currentTimeMillis());
             
-            RequestBody requestBody = RequestBody.create(body.toString(), MediaType.parse("application/json"));
-            Request request = new Request.Builder().url(url).put(requestBody).build();
+            RequestBody requestBody = RequestBody.create(
+                    body.toString(), 
+                    MediaType.parse("application/json; charset=utf-8")
+            );
+
+            Request request = new Request.Builder()
+                    .url(url)
+                    .put(requestBody) // استخدام PUT لإنشاء أو تحديث البيانات
+                    .build();
 
             client.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(@NonNull Call call, @NonNull java.io.IOException e) {
                     runOnUiThread(() -> {
                         stopLoadingState();
-                        Toast.makeText(MainActivity.this, "فشل الاتصال بالخادم، حاول مجدداً", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "تعذر الاتصال بالخادم، افحص الإنترنت", Toast.LENGTH_SHORT).show();
                     });
                 }
 
@@ -147,17 +167,28 @@ public class MainActivity extends AppCompatActivity {
                     if (response.isSuccessful()) {
                         saveAndProceed(name);
                     } else {
-                        runOnUiThread(() -> stopLoadingState());
+                        runOnUiThread(() -> {
+                            stopLoadingState();
+                            Toast.makeText(MainActivity.this, "خطأ في السيرفر، حاول لاحقاً", Toast.LENGTH_SHORT).show();
+                        });
                     }
                 }
             });
-        } catch (Exception ignored) { stopLoadingState(); }
+        } catch (Exception e) {
+            stopLoadingState();
+        }
     }
 
     private void saveAndProceed(String name) {
-        getSharedPreferences("AppPrefs", MODE_PRIVATE).edit().putString("user_name", name).apply();
+        // حفظ الاسم محلياً للانتقال التلقائي في المرات القادمة
+        getSharedPreferences("AppPrefs", MODE_PRIVATE)
+                .edit()
+                .putString("user_name", name)
+                .apply();
+
         runOnUiThread(() -> {
-            startActivity(new Intent(MainActivity.this, SecondActivity.class));
+            Intent intent = new Intent(MainActivity.this, SecondActivity.class);
+            startActivity(intent);
             finish();
         });
     }
