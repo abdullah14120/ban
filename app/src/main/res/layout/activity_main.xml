@@ -1,127 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout 
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F4F7F9"
-    android:layoutDirection="rtl">
+    android:background="#F4F7F9">
 
     <View
+        android:id="@+id/headerBackground"
         android:layout_width="match_parent"
-        android:layout_height="260dp"
+        android:layout_height="240dp"
         android:background="@drawable/gradient_header" />
 
-    <androidx.core.widget.NestedScrollView
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:paddingBottom="30dp">
+        android:scrollbars="none">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:padding="20dp">
+            android:padding="20dp"
+            android:gravity="center_horizontal">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
+                android:orientation="vertical"
+                android:gravity="center"
                 android:layout_marginTop="30dp"
-                android:layout_marginBottom="20dp">
+                android:layout_marginBottom="25dp">
 
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="start">
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="الدعم الفني للواتساب"
-                        android:textColor="#FFFFFF"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="4dp">
-                        
-                        <ImageView
-                            android:layout_width="12dp"
-                            android:layout_height="12dp"
-                            android:layout_marginEnd="5dp"
-                            android:src="@android:drawable/ic_lock_idle_lock"
-                            app:tint="#4CAF50" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="تحليل وفك حظر الحسابات"
-                            android:textColor="#B3FFFFFF"
-                            android:textSize="11sp" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <com.google.android.material.card.MaterialCardView
+                <androidx.cardview.widget.CardView
                     android:layout_width="85dp"
                     android:layout_height="85dp"
-                    android:layout_marginStart="15dp"
                     app:cardCornerRadius="42.5dp"
-                    app:cardElevation="6dp"
-                    app:strokeWidth="3dp"
-                    app:strokeColor="#FFFFFF">
-
+                    app:cardElevation="6dp">
                     <ImageView
                         android:id="@+id/imgLogo"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:src="@drawable/ic_main_logo"
                         android:scaleType="centerCrop" />
-                </com.google.android.material.card.MaterialCardView>
+                </androidx.cardview.widget.CardView>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="نظام فحص وفك الحظر"
+                    android:textColor="#FFFFFF"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="15dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="اتصال آمن وموثق 🛡️"
+                    android:textColor="#B3FFFFFF"
+                    android:textSize="13sp"
+                    android:layout_marginTop="5dp" />
             </LinearLayout>
 
-            <com.google.android.material.card.MaterialCardView
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="10dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="8dp"
                 app:cardUseCompatPadding="true">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="22dp">
+                    android:padding="25dp"
+                    android:gravity="right">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="رقم الهاتف المطلوب فكه"
+                        android:text="رقم الهاتف المطلوب"
                         android:textColor="#1A73E8"
                         android:textSize="14sp"
-                        android:textStyle="bold" />
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="10dp"
-                        android:layout_marginBottom="20dp"
-                        android:background="#F0F0F0" />
+                        android:textStyle="bold"
+                        android:layout_marginBottom="10dp" />
 
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="أدخل رقم الهاتف"
                         app:boxCornerRadiusTopStart="12dp"
                         app:boxCornerRadiusTopEnd="12dp"
                         app:boxCornerRadiusBottomStart="12dp"
@@ -131,20 +98,21 @@
                             android:id="@+id/edtUserName"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:hint="أدخل رقم الهاتف مع رمز الدولة"
                             android:inputType="phone"
-                            android:textDirection="ltr"
-                            android:gravity="start"
-                            android:textSize="16sp" />
+                            android:textSize="16sp"
+                            android:gravity="right" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="18dp"
+                        android:layout_marginTop="20dp"
                         android:layout_marginBottom="8dp"
                         android:text="نوع الحظر المطلوب فكه:"
-                        android:textColor="#555555"
-                        android:textSize="12sp" />
+                        android:textColor="#333333"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
 
                     <FrameLayout
                         android:layout_width="match_parent"
@@ -154,84 +122,56 @@
                         <Spinner
                             android:id="@+id/spinnerBanType"
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent" />
+                            android:layout_height="match_parent"
+                            android:spinnerMode="dropdown" />
                     </FrameLayout>
 
-                    <LinearLayout
+                    <RelativeLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_marginTop="25dp">
+                        android:layout_marginTop="30dp">
 
-                        <FrameLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-                            
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnSubmit"
-                                android:layout_width="match_parent"
-                                android:layout_height="60dp"
-                                android:text="إرسال طلب التحقق"
-                                android:textSize="16sp"
-                                android:textStyle="bold"
-                                app:cornerRadius="12dp"
-                                app:backgroundTint="#1A73E8" />
-
-                            <ProgressBar
-                                android:id="@+id/btnProgressBar"
-                                android:layout_width="28dp"
-                                android:layout_height="28dp"
-                                android:layout_gravity="center"
-                                android:visibility="gone"
-                                android:indeterminateTint="#FFFFFF" />
-                        </FrameLayout>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnWatchVideo"
+                        <Button
+                            android:id="@+id/btnSubmit"
                             android:layout_width="match_parent"
                             android:layout_height="60dp"
-                            android:layout_marginTop="12dp"
-                            android:text="مشاهدة فيديو شرح الاستخدام"
-                            android:textSize="15sp"
+                            android:text="إرسال طلب التحقق"
+                            android:textSize="16sp"
                             android:textStyle="bold"
-                            app:cornerRadius="12dp"
-                            app:backgroundTint="#D32F2F"
-                            app:icon="@android:drawable/ic_media_play"
-                            app:iconGravity="textStart"
-                            app:iconPadding="10dp"
-                            app:iconTint="#FFFFFF" />
+                            android:backgroundTint="#1A73E8"
+                            android:textColor="#FFFFFF" />
 
-                    </LinearLayout>
+                        <ProgressBar
+                            android:id="@+id/btnProgressBar"
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:layout_centerInParent="true"
+                            android:visibility="gone"
+                            android:indeterminateTint="#FFFFFF" />
+                    </RelativeLayout>
 
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+            </androidx.cardview.widget.CardView>
 
-            <LinearLayout
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:paddingHorizontal="15dp"
-                android:paddingVertical="8dp"
-                android:background="@drawable/bg_security_chip">
+                android:text="نظام معالجة آمن (SSL 256-bit)"
+                android:layout_gravity="center"
+                android:textColor="#999999"
+                android:textSize="11sp"
+                android:layout_marginTop="30dp" />
 
-                <ImageView
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:src="@android:drawable/ic_lock_lock"
-                    app:tint="#1A73E8" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="نظام معالجة آمن (256-bit SSL)"
-                    android:textColor="#1A73E8"
-                    android:textSize="10sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="فريق الدعم التقني © 2026"
+                android:layout_gravity="center"
+                android:textColor="#999999"
+                android:textSize="11sp"
+                android:layout_marginTop="5dp" />
 
         </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+    </ScrollView>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</RelativeLayout>
