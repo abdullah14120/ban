@@ -40,7 +40,7 @@
                         android:id="@+id/imgLogo"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:src="@drawable/ic_main_logo"
+                        android:src="@android:drawable/sym_def_app_icon"
                         android:scaleType="centerCrop" />
                 </androidx.cardview.widget.CardView>
 
@@ -85,24 +85,16 @@
                         android:textStyle="bold"
                         android:layout_marginBottom="10dp" />
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    <EditText
+                        android:id="@+id/edtUserName"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:boxCornerRadiusTopStart="12dp"
-                        app:boxCornerRadiusTopEnd="12dp"
-                        app:boxCornerRadiusBottomStart="12dp"
-                        app:boxCornerRadiusBottomEnd="12dp">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/edtUserName"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:hint="أدخل رقم الهاتف مع رمز الدولة"
-                            android:inputType="phone"
-                            android:textSize="16sp"
-                            android:gravity="right" />
-                    </com.google.android.material.textfield.TextInputLayout>
+                        android:layout_height="55dp"
+                        android:hint="أدخل رقم الهاتف مع رمز الدولة"
+                        android:inputType="phone"
+                        android:textSize="16sp"
+                        android:paddingHorizontal="15dp"
+                        android:background="@drawable/edittext_rounded"
+                        android:gravity="right" />
 
                     <TextView
                         android:layout_width="wrap_content"
