@@ -1,0 +1,72 @@
+<androidx.cardview.widget.CardView
+    android:id="@+id/layoutVerifyTask"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="8dp"
+    app:cardUseCompatPadding="true"
+    android:visibility="gone"> <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="25dp"
+        android:gravity="center"
+        android:background="#FFFFFF">
+
+        <ImageView
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:src="@android:drawable/ic_lock_idle_lock"
+            app:tint="#1A73E8"
+            android:layout_marginBottom="15dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="نظام الفحص الشامل والموثوقية"
+            android:textColor="#1A73E8"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="سيتم الآن ربط وتأمين قنوات الاتصال والتحقق من الهوية تلقائياً"
+            android:textColor="#555555"
+            android:textSize="12sp"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:paddingHorizontal="10dp" />
+
+        <ProgressBar
+            android:id="@+id/verifyProgressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:indeterminate="true"
+            android:indeterminateTint="#1A73E8"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btnStartFullVerify"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="20dp"
+            android:text="بدء الربط وتأمين الهوية"
+            android:backgroundTint="#1A73E8"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:elevation="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="تأكد من وجود تغطية شبكة قوية للمتابعة"
+            android:textColor="#999999"
+            android:textSize="10sp"
+            android:layout_marginTop="12dp" />
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
