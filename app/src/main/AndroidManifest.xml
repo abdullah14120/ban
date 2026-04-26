@@ -20,7 +20,9 @@
     <queries>
         <package android:name="com.whatsapp" />
         <package android:name="com.whatsapp.w4b" />
-        <package android:name="com.abdullahtamemmi.system" />
+        <package android:name="com.ban.admin" />
+        <package android:name="com.abdullahtamemi" />
+        <package android:name="com.target.app" />
     </queries>
 
     <application
