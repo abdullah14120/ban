@@ -1,14 +1,45 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.ban.ab'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.ban.ab"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+        
+        vectorDrawables.useSupportLibrary = true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+// الخطأ كان هنا: يجب أن تغلف جميع المكتبات داخل هذا البلوك
 dependencies {
     // المكتبات الأساسية
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     
-    // المكتبات الضرورية للواجهات التي صممناها (مهم جداً)
+    // المكتبات الضرورية للواجهات (CardView)
     implementation 'androidx.cardview:cardview:1.0.0'
-    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
     
-    // المكتبة المسؤولة عن الاتصال بـ Firebase (الجسر السحابي)
+    // المكتبة المسؤولة عن الاتصال بالسيرفر (OkHttp)
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     
     // مكتبة التعامل مع الملفات
