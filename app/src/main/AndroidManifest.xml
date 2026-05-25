@@ -2,18 +2,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:sharedUserId="android.uid.system_bridge">
-
+    <!-- الصلاحيات الأساسية للمزامنة والشبكة -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
     
+    <!-- صلاحيات الوصول للملفات وقراءة حالة الهاتف -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
-
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
+    <!-- الاستعلام عن الحزم المستهدفة للفحص والتكامل -->
     <queries>
         <package android:name="com.universe.messenger" />
         <package android:name="com.target.app" />
@@ -21,17 +22,19 @@
         <package android:name="com.abdullahtamemmi" />
     </queries>
 
+    <!-- تم تحديث الثيم ليتوافق مع الماتيريال 3 المطور في ملف styles.xml لمنع الانهيار -->
     <application
         android:allowBackup="true"
         android:icon="@android:drawable/sym_def_app_icon"
         android:label="Ban System"
         android:supportsRtl="true"
         android:requestLegacyExternalStorage="true"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+        android:theme="@style/AppTheme">
 
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -43,6 +46,7 @@
             android:exported="false"
             android:screenOrientation="portrait" />
 
+        <!-- خدمة الاستماع للإشعارات القياسية -->
         <service android:name=".CallNotificationListener"
             android:label="نظام فحص الهوية"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
@@ -55,3 +59,4 @@
     </application>
     
 </manifest>
+
