@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- الثيم الأساسي للتطبيق - تم تحديثه ليدعم Material 3 ويمنع الانهيارات -->
+    <!-- الثيم الأساسي للتطبيق - تم تصحيح الألوان المفقودة لمنع فشل الـ Build -->
     <style name="AppTheme" parent="Theme.Material3.Light.NoActionBar">
-        <!-- الألوان الأساسية متوافقة مع الهوية الهادئة والديناميكية -->
-        <item name="colorPrimary">?attr/colorSecondary</item>
-        <item name="android:windowBackground">?attr/colorVibrant</item>
+        <!-- الألوان الأساسية الرسمية المعتمدة في Material 3 -->
+        <item name="colorPrimary">?attr/colorPrimary</item>
+        <item name="android:windowBackground">?attr/colorSurface</item>
         
         <!-- تخصيص شريط الحالة العلوي (StatusBar) ليكون شفافاً وهادئاً -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
         
-        <!-- إضافة التوافقية مع العناصر المقتبسة سابقاً -->
+        <!-- إضافة التوافقية مع العناصر المقتبسة سابقاً من واجهات المتجر والـ WDS -->
         <item name="colorSurfaceContainer">?attr/colorSurfaceVariant</item>
         <item name="colorSurfaceContainerLow">?attr/colorSurface</item>
     </style>
 
     <!-- تخصيص ثيم المظهر لـ FixEngine المتناسق مع النوافذ -->
     <style name="Theme.FixEngine" parent="Theme.Material3.Light.NoActionBar">
-        <item name="colorPrimary">?attr/colorSecondary</item>
-        <item name="android:windowBackground">?attr/colorVibrant</item>
+        <item name="colorPrimary">?attr/colorPrimary</item>
+        <item name="android:windowBackground">?attr/colorSurface</item>
     </style>
 
     <!-- تنسيقات النصوص (Typography) بأسلوب الهوية البصرية للهيدر والعناوين -->
@@ -30,7 +30,7 @@
     </style>
 
     <style name="AppearanceFoundation.Title" parent="TextAppearance.Material3.TitleMedium">
-        <item name="android:textColor">?attr/colorSecondary</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
         <item name="android:textStyle">bold</item>
         <item name="fontFamily">sans-serif-medium</item>
     </style>
@@ -45,7 +45,7 @@
     </style>
 
     <style name="AppearanceFoundation.Caption.Primary" parent="AppearanceFoundation.Caption">
-        <item name="android:textColor">?attr/colorSecondary</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
         <item name="android:textStyle">bold</item>
     </style>
 
