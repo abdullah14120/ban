@@ -1,161 +1,204 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F4F7F9">
+    android:background="?android:attr/colorBackground">
 
-    <View
-        android:id="@+id/headerBackground"
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBar"
         android:layout_width="match_parent"
-        android:layout_height="240dp"
-        android:background="#1A73E8" />
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scrollbars="none">
+        android:layout_height="wrap_content"
+        android:background="?android:attr/colorBackground"
+        app:elevation="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp"
-            android:gravity="center_horizontal">
+            android:paddingTop="32dp"
+            android:paddingHorizontal="24dp"
+            android:paddingBottom="16dp"
+            android:gravity="right">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:layout_marginTop="30dp"
-                android:layout_marginBottom="25dp">
-
-                <androidx.cardview.widget.CardView
-                    android:layout_width="85dp"
-                    android:layout_height="85dp"
-                    app:cardCornerRadius="42.5dp"
-                    app:cardElevation="6dp">
-                    <ImageView
-                        android:id="@+id/imgLogo"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:src="@android:drawable/ic_dialog_info"
-                        android:padding="15dp"
-                        app:tint="#1A73E8"
-                        android:scaleType="centerInside" />
-                </androidx.cardview.widget.CardView>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="نظام فحص وفك الحظر"
-                    android:textColor="#FFFFFF"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:layout_marginTop="15dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="اتصال آمن وموثق 🛡️"
-                    android:textColor="#B3FFFFFF"
-                    android:textSize="13sp"
-                    android:layout_marginTop="5dp" />
-            </LinearLayout>
-
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
                 app:cardCornerRadius="16dp"
-                app:cardElevation="8dp"
-                app:cardUseCompatPadding="true">
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="16dp">
+                <ImageView
+                    android:id="@+id/imgLogo"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@android:drawable/ic_dialog_info"
+                    android:padding="16dp"
+                    app:tint="?attr/colorPrimary"
+                    android:scaleType="centerInside"
+                    tools:ignore="ContentDescription" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="الدعم الفني للواتساب"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="24sp"
+                android:fontFamily="sans-serif-black" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="اتصال آمن وموثق مع خوادم الدعم الفني للواتساب 🛡️"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="13sp"
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginTop="4dp" />
+
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progressBarTop"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:indeterminate="true"
+            android:visibility="gone"
+            android:indeterminateTint="?attr/colorPrimary" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:strokeColor="?attr/colorOutlineVariant"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="25dp"
+                    android:padding="24dp"
                     android:gravity="right">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="رقم الهاتف المطلوب"
-                        android:textColor="#1A73E8"
+                        android:text="رقم الهاتف"
+                        android:textColor="?attr/colorPrimary"
                         android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="10dp" />
+                        android:fontFamily="sans-serif-black"
+                        android:layout_marginBottom="8dp" />
 
-                    <EditText
-                        android:id="@+id/edtUserName"
+                    <com.google.android.material.card.MaterialCardView
                         android:layout_width="match_parent"
-                        android:layout_height="55dp"
-                        android:hint="أدخل رقم الهاتف مع رمز الدولة"
-                        android:inputType="phone"
-                        android:textSize="16sp"
-                        android:paddingHorizontal="15dp"
-                        android:background="@android:drawable/editbox_background"
-                        android:gravity="right" />
+                        android:layout_height="56dp"
+                        app:cardBackgroundColor="?attr/colorSurfaceContainer"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="?attr/colorOutlineVariant"
+                        app:strokeWidth="1dp"
+                        android:layout_marginBottom="20dp">
+
+                        <EditText
+                            android:id="@+id/edtUserName"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@android:color/transparent"
+                            android:hint="أدخل رقم الهاتف المكون من 9 أرقام"
+                            android:textColorHint="?attr/colorOutline"
+                            android:textColor="?attr/colorOnSurface"
+                            android:inputType="phone"
+                            android:textSize="15sp"
+                            android:paddingHorizontal="16dp"
+                            android:gravity="right|center_vertical" />
+                    </com.google.android.material.card.MaterialCardView>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="20dp"
-                        android:layout_marginBottom="8dp"
-                        android:text="نوع الحظر المطلوب فكه:"
-                        android:textColor="#333333"
+                        android:text="نوع الحظر المطلوب رفعه"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="14sp"
-                        android:textStyle="bold" />
+                        android:fontFamily="sans-serif-black"
+                        android:layout_marginBottom="8dp" />
 
-                    <FrameLayout
+                    <com.google.android.material.card.MaterialCardView
                         android:layout_width="match_parent"
-                        android:layout_height="55dp"
-                        android:background="@android:drawable/btn_default"
-                        android:paddingHorizontal="10dp">
+                        android:layout_height="56dp"
+                        app:cardBackgroundColor="?attr/colorSurfaceContainer"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="?attr/colorOutlineVariant"
+                        app:strokeWidth="1dp"
+                        android:layout_marginBottom="28dp">
+
                         <Spinner
                             android:id="@+id/spinnerBanType"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:spinnerMode="dropdown" />
-                    </FrameLayout>
+                            android:spinnerMode="dropdown"
+                            android:paddingHorizontal="12dp"
+                            android:gravity="right" />
+                    </com.google.android.material.card.MaterialCardView>
 
                     <RelativeLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="30dp">
+                        android:layout_height="wrap_content">
 
-                        <Button
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnSubmit"
                             android:layout_width="match_parent"
-                            android:layout_height="60dp"
+                            android:layout_height="56dp"
                             android:text="إرسال طلب التحقق"
-                            android:textSize="16sp"
-                            android:textStyle="bold"
-                            android:backgroundTint="#1A73E8"
-                            android:textColor="#FFFFFF" />
+                            android:textSize="15sp"
+                            android:fontFamily="sans-serif-black"
+                            app:backgroundTint="?attr/colorPrimary"
+                            textColor="?attr/colorOnPrimary"
+                            app:cornerRadius="16dp"
+                            app:elevation="0dp" />
 
                         <ProgressBar
                             android:id="@+id/btnProgressBar"
-                            android:layout_width="30dp"
-                            android:layout_height="30dp"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
                             android:layout_centerInParent="true"
                             android:visibility="gone"
-                            android:indeterminateTint="#FFFFFF" />
+                            android:indeterminateTint="?attr/colorOnPrimary" />
                     </RelativeLayout>
 
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="نظام معالجة آمن (SSL 256-bit)"
+                android:text="نظام معالجة آمن ومكفول (SSL 256-bit)"
                 android:layout_gravity="center"
-                android:textColor="#999999"
+                android:textColor="?attr/colorOutline"
                 android:textSize="11sp"
-                android:layout_marginTop="30dp" />
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginTop="32dp" />
 
         </LinearLayout>
-    </ScrollView>
-</RelativeLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
