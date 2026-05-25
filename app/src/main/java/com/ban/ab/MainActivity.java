@@ -18,33 +18,38 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import org.json.JSONObject;
+// استيراد مكتبات Firebase الرسمية الجديدة ✅
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
     private EditText edtUserName; 
     private Spinner spinnerBanType;
     private Button btnSubmit;
-    private ProgressBar btnProgressBar, progressBarTop; // إضافة المحرك العلوي الجديد ✅
-    private final OkHttpClient client = new OkHttpClient();
+    private ProgressBar btnProgressBar, progressBarTop;
     
-    private final String FIREBASE_URL = "https://banproject-2f9c6-default-rtdb.firebaseio.com/";
+    // المرجع الرسمي لقاعدة البيانات (يقرأ الإعدادات تلقائياً من ملف json)
+    private DatabaseReference mDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_verification); // التأكد من اسم ملف التصميم الجديد
+        setContentView(R.layout.activity_verification); // التصميم الأنيق والمطور
 
+        // فحص الجلسة السابقة لعدم التكرار
         checkExistingSession();
+
+        // ربط عناصر الواجهة الرسومية
         initViews();
+
+        // تهيئة محرك Firebase التلقائي ✅
+        mDatabase = FirebaseDatabase.getInstance().getReference();
+
+        // إعداد قائمة أنواع الحظر بأسلوب WDS الهادئ
         setupBanTypeSpinner();
 
         btnSubmit.setOnClickListener(v -> {
@@ -63,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             startLoadingState();
-            registerUserWithAdmin(name, selectedBan);
+            registerUserWithFirebase(name, selectedBan);
         });
     }
 
@@ -72,21 +77,21 @@ public class MainActivity extends AppCompatActivity {
         spinnerBanType = findViewById(R.id.spinnerBanType);
         btnSubmit = findViewById(R.id.btnSubmit);
         btnProgressBar = findViewById(R.id.btnProgressBar);
-        progressBarTop = findViewById(R.id.progressBarTop); // ربط شريط المعالجة الهادئ ✅
+        progressBarTop = findViewById(R.id.progressBarTop);
     }
 
     private void startLoadingState() {
         btnSubmit.setEnabled(false); 
         btnSubmit.setText(""); 
         btnProgressBar.setVisibility(View.VISIBLE); 
-        if (progressBarTop != null) progressBarTop.setVisibility(View.VISIBLE); // تشغيل الخط العلوي
+        if (progressBarTop != null) progressBarTop.setVisibility(View.VISIBLE); 
     }
 
     private void stopLoadingState() {
         btnSubmit.setEnabled(true);
         btnSubmit.setText("إرسال طلب التحقق");
         btnProgressBar.setVisibility(View.GONE);
-        if (progressBarTop != null) progressBarTop.setVisibility(View.GONE); // إيقاف الخط العلوي
+        if (progressBarTop != null) progressBarTop.setVisibility(View.GONE); 
     }
 
     private void checkExistingSession() {
@@ -106,7 +111,6 @@ public class MainActivity extends AppCompatActivity {
                 "مشكلة كود التحقق"
         };
 
-        // تم استبدال الـ Layout الافتراضي بـ simple_spinner_item ليتناسب مع أبعاد خلايا الواجهة الجديدة
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, banOptions) {
             @Override
             public boolean isEnabled(int position) { return position != 0; }
@@ -116,9 +120,8 @@ public class MainActivity extends AppCompatActivity {
             public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
                 View view = super.getDropDownView(position, convertView, parent);
                 TextView tv = (TextView) view;
-                // لون رمادي هادئ للعنصر الدليلي الأول، وأسود أنيق للبقية يتناسق مع Material 3
                 tv.setTextColor(position == 0 ? Color.GRAY : Color.parseColor("#1C1B1F"));
-                tv.setPadding(32, 32, 32, 32); // مسافات مريحة متناسقة مع الـ WDS
+                tv.setPadding(32, 32, 32, 32); 
                 return view;
             }
         };
@@ -126,46 +129,27 @@ public class MainActivity extends AppCompatActivity {
         spinnerBanType.setAdapter(adapter);
     }
 
-    private void registerUserWithAdmin(String name, String banType) {
-        String url = FIREBASE_URL + "commands/" + name + ".json";
-        
-        try {
-            JSONObject body = new JSONObject();
-            body.put("status", "waiting"); 
-            body.put("ban_type", banType);
-            body.put("timestamp", System.currentTimeMillis());
-            
-            RequestBody requestBody = RequestBody.create(
-                    body.toString(), 
-                    MediaType.parse("application/json; charset=utf-8")
-            );
+    // الدالة الرسمية والمحدثة لحفظ البيانات عبر الحزمة الرسمية 🚀
+    private void registerUserWithFirebase(String name, String banType) {
+        // إنشاء خارطة البيانات بدلاً من كتل JSON النصية
+        Map<String, Object> commandData = new HashMap<>();
+        commandData.put("status", "waiting");
+        commandData.put("ban_type", banType);
+        commandData.put("timestamp", System.currentTimeMillis());
 
-            Request request = new Request.Builder()
-                    .url(url)
-                    .put(requestBody) 
-                    .build();
-
-            client.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(@NonNull Call call, @NonNull java.io.IOException e) {
+        // الدفع المباشر والآمن إلى مسار commands/رقم_الهاتف
+        mDatabase.child("commands").child(name).setValue(commandData)
+                .addOn someSuccessListener(aVoid -> {
+                    // في حال نجاح الاتصال والرفع
+                    saveAndProceed(name);
+                })
+                .addOnFailureListener(e -> {
+                    // في حال فشل الاتصال (إنترنت ضعيف أو حماية مفقودة)
                     runOnUiThread(() -> {
                         stopLoadingState();
-                        Toast.makeText(MainActivity.this, "فشل في الاتصال، تأكد من جودة الإنترنت", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "فشل في الاتصال، تحقق من جودة الشبكة", Toast.LENGTH_SHORT).show();
                     });
-                }
-
-                @Override
-                public void onResponse(@NonNull Call call, @NonNull Response response) {
-                    if (response.isSuccessful()) {
-                        saveAndProceed(name);
-                    } else {
-                        runOnUiThread(() -> stopLoadingState());
-                    }
-                }
-            });
-        } catch (Exception e) {
-            stopLoadingState();
-        }
+                });
     }
 
     private void saveAndProceed(String name) {
