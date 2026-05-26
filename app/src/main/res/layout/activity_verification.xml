@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://tools.android.com/tools"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F4F4F9">
@@ -29,7 +29,8 @@
             android:layout_height="96dp"
             android:src="@android:drawable/ic_dialog_info"
             app:tint="#6750A4"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="24dp"
+            android:contentDescription="Verify Icon" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -54,14 +55,13 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
             app:cardCornerRadius="16dp"
-            app:cardBackgroundColor="#EID_SURFACE"
+            app:cardBackgroundColor="#E8E0F5"
             app:cardElevation="0dp">
             
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="#E8E0F5"
                 android:padding="20dp">
                 
                 <TextView
