@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_verification); // التصميم الأنيق والمطور المعتمد على Material 3
+        setContentView(R.layout.activity_main); // التصميم الأنيق والمطور المعتمد على Material 3
 
         // فحص الجلسة السابقة لضمان عدم اضطرار المستخدم للتسجيل مجدداً
         checkExistingSession();
