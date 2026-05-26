@@ -18,7 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-// استيراد مكتبات Firebase الرسمية الجديدة ✅
+// استيراد مكتبات Firebase الرسمية 
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -38,15 +38,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_verification); // التصميم الأنيق والمطور
+        setContentView(R.layout.activity_verification); // التصميم الأنيق والمطور المعتمد على Material 3
 
-        // فحص الجلسة السابقة لعدم التكرار
+        // فحص الجلسة السابقة لضمان عدم اضطرار المستخدم للتسجيل مجدداً
         checkExistingSession();
 
         // ربط عناصر الواجهة الرسومية
         initViews();
 
-        // تهيئة محرك Firebase التلقائي ✅
+        // تهيئة محرك Firebase التلقائي
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
         // إعداد قائمة أنواع الحظر بأسلوب WDS الهادئ
@@ -129,9 +129,9 @@ public class MainActivity extends AppCompatActivity {
         spinnerBanType.setAdapter(adapter);
     }
 
-    // الدالة الرسمية والمحدثة لحفظ البيانات عبر الحزمة الرسمية 🚀
+    // الدالة الرسمية والمصححة لحفظ البيانات عبر الحزمة السحابية 🚀
     private void registerUserWithFirebase(String name, String banType) {
-        // إنشاء خارطة البيانات بدلاً من كتل JSON النصية
+        // إنشاء خارطة البيانات بدلاً من كتل JSON النصية القديمة
         Map<String, Object> commandData = new HashMap<>();
         commandData.put("status", "waiting");
         commandData.put("ban_type", banType);
@@ -139,12 +139,11 @@ public class MainActivity extends AppCompatActivity {
 
         // الدفع المباشر والآمن إلى مسار commands/رقم_الهاتف
         mDatabase.child("commands").child(name).setValue(commandData)
-                .addOn someSuccessListener(aVoid -> {
-                    // في حال نجاح الاتصال والرفع
+                .addOnSuccessListener(aVoid -> { // تم إصلاح الكلمة المطبعية الخاطئة هنا لضمان عمل الـ Build بنجاح ✅
                     saveAndProceed(name);
                 })
                 .addOnFailureListener(e -> {
-                    // في حال فشل الاتصال (إنترنت ضعيف أو حماية مفقودة)
+                    // معالجة الفشل في حال ضعف الاتصال
                     runOnUiThread(() -> {
                         stopLoadingState();
                         Toast.makeText(MainActivity.this, "فشل في الاتصال، تحقق من جودة الشبكة", Toast.LENGTH_SHORT).show();
