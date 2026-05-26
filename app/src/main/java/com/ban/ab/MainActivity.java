@@ -2,20 +2,15 @@ package com.ban.ab;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText; 
 import android.widget.ProgressBar;
-import android.widget.Spinner;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 // استيراد مكتبات Firebase الرسمية 
@@ -28,17 +23,18 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
 
     private EditText edtUserName; 
-    private Spinner spinnerBanType;
+    // تم التعديل هنا ليتوافق مع تصميم Material 3
+    private AutoCompleteTextView spinnerBanType;
     private Button btnSubmit;
     private ProgressBar btnProgressBar, progressBarTop;
     
-    // المرجع الرسمي لقاعدة البيانات (يقرأ الإعدادات تلقائياً من ملف json)
+    // المرجع الرسمي لقاعدة البيانات 
     private DatabaseReference mDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main); // التصميم الأنيق والمطور المعتمد على Material 3
+        setContentView(R.layout.activity_main); 
 
         // فحص الجلسة السابقة لضمان عدم اضطرار المستخدم للتسجيل مجدداً
         checkExistingSession();
@@ -49,20 +45,21 @@ public class MainActivity extends AppCompatActivity {
         // تهيئة محرك Firebase التلقائي
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
-        // إعداد قائمة أنواع الحظر بأسلوب WDS الهادئ
+        // إعداد قائمة أنواع الحظر 
         setupBanTypeSpinner();
 
         btnSubmit.setOnClickListener(v -> {
             String name = edtUserName.getText().toString().trim();
-            int selectedPosition = spinnerBanType.getSelectedItemPosition();
-            String selectedBan = spinnerBanType.getSelectedItem().toString();
+            // جلب النص المختار من القائمة المنسدلة الجديدة
+            String selectedBan = spinnerBanType.getText().toString().trim();
             
             if (name.isEmpty()) {
                 Toast.makeText(this, "يرجى إدخال رقم الهاتف المطلوب فحصه", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            if (selectedPosition == 0) {
+            // تحديث شرط التحقق بما يتناسب مع AutoCompleteTextView
+            if (selectedBan.isEmpty()) {
                 Toast.makeText(this, "يرجى اختيار نوع الحظر من القائمة", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -74,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initViews() {
         edtUserName = findViewById(R.id.edtUserName);
+        // تم ربط المعرف بنفس الاسم الموجود في ملف الـ XML
         spinnerBanType = findViewById(R.id.spinnerBanType);
         btnSubmit = findViewById(R.id.btnSubmit);
         btnProgressBar = findViewById(R.id.btnProgressBar);
@@ -103,29 +101,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupBanTypeSpinner() {
+        // تم إزالة خيار "اضغط هنا..." لأن الواجهة الجديدة تدير ذلك عبر الـ Hint بذكاء
         String[] banOptions = {
-                "اضغط هنا لاختيار نوع الحظر...", 
                 "مشكلة حظر إستخدام الواتساب الرسمي",
                 "تسجيل الدخول غير متوفر",
                 "حظر انتهاك أو مشدد",
                 "مشكلة كود التحقق"
         };
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, banOptions) {
-            @Override
-            public boolean isEnabled(int position) { return position != 0; }
-
-            @NonNull
-            @Override
-            public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-                View view = super.getDropDownView(position, convertView, parent);
-                TextView tv = (TextView) view;
-                tv.setTextColor(position == 0 ? Color.GRAY : Color.parseColor("#1C1B1F"));
-                tv.setPadding(32, 32, 32, 32); 
-                return view;
-            }
-        };
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        // استخدام القالب المتوافق مع AutoCompleteTextView
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this, 
+                android.R.layout.simple_dropdown_item_1line, 
+                banOptions
+        );
+        
         spinnerBanType.setAdapter(adapter);
     }
 
@@ -139,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
 
         // الدفع المباشر والآمن إلى مسار commands/رقم_الهاتف
         mDatabase.child("commands").child(name).setValue(commandData)
-                .addOnSuccessListener(aVoid -> { // تم إصلاح الكلمة المطبعية الخاطئة هنا لضمان عمل الـ Build بنجاح ✅
+                .addOnSuccessListener(aVoid -> { 
                     saveAndProceed(name);
                 })
                 .addOnFailureListener(e -> {
