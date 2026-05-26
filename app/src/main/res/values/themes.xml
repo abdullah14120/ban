@@ -1,51 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- الثيم الأساسي للتطبيق - تم تصحيح الألوان المفقودة لمنع فشل الـ Build -->
     <style name="AppTheme" parent="Theme.Material3.Light.NoActionBar">
-        <!-- الألوان الأساسية الرسمية المعتمدة في Material 3 -->
-        <item name="colorPrimary">?attr/colorPrimary</item>
-        <item name="android:windowBackground">?attr/colorSurface</item>
-        
-        <!-- تخصيص شريط الحالة العلوي (StatusBar) ليكون شفافاً وهادئاً -->
-        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="colorPrimary">#6750A4</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#1C1B1F</item>
+        <item name="android:windowBackground">#F7F5FA</item> <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
         
-        <!-- إضافة التوافقية مع العناصر المقتبسة سابقاً من واجهات المتجر والـ WDS -->
-        <item name="colorSurfaceContainer">?attr/colorSurfaceVariant</item>
-        <item name="colorSurfaceContainerLow">?attr/colorSurface</item>
+        <item name="colorSurfaceContainer">#F3EDF7</item>
+        <item name="colorSurfaceContainerHigh">#ECE6F0</item>
+        <item name="colorSurfaceContainerLow">#F7F5FA</item>
+        <item name="colorOutlineVariant">#CAC4D0</item>
+        <item name="colorOnSurfaceVariant">#49454F</item>
     </style>
 
-    <!-- تخصيص ثيم المظهر لـ FixEngine المتناسق مع النوافذ -->
     <style name="Theme.FixEngine" parent="Theme.Material3.Light.NoActionBar">
-        <item name="colorPrimary">?attr/colorPrimary</item>
-        <item name="android:windowBackground">?attr/colorSurface</item>
+        <item name="colorPrimary">#6750A4</item>
+        <item name="android:windowBackground">#F7F5FA</item>
     </style>
 
-    <!-- تنسيقات النصوص (Typography) بأسلوب الهوية البصرية للهيدر والعناوين -->
     <style name="AppearanceFoundation.Headline" parent="TextAppearance.Material3.HeadlineMedium">
-        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textColor">#1C1B1F</item>
         <item name="android:textStyle">bold</item>
         <item name="fontFamily">sans-serif-black</item>
     </style>
 
     <style name="AppearanceFoundation.Title" parent="TextAppearance.Material3.TitleMedium">
-        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:textColor">#6750A4</item>
         <item name="android:textStyle">bold</item>
         <item name="fontFamily">sans-serif-medium</item>
     </style>
 
     <style name="AppearanceFoundation.Body" parent="TextAppearance.Material3.BodyLarge">
-        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        <item name="android:textColor">#49454F</item>
         <item name="android:textSize">16sp</item>
     </style>
 
     <style name="AppearanceFoundation.Caption" parent="TextAppearance.Material3.BodySmall">
-        <item name="android:textColor">?attr/colorOutline</item>
+        <item name="android:textColor">#79747E</item>
     </style>
 
     <style name="AppearanceFoundation.Caption.Primary" parent="AppearanceFoundation.Caption">
-        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:textColor">#6750A4</item>
         <item name="android:textStyle">bold</item>
     </style>
 
@@ -54,7 +52,6 @@
         <item name="android:textSize">11sp</item>
     </style>
 
-    <!-- تنسيقات الأزرار الاحترافية بنظام الحواف المستديرة الناعمة للـ WDS -->
     <style name="WidgetFoundation.Button" parent="Widget.Material3.Button">
         <item name="android:layout_height">56dp</item>
         <item name="cornerRadius">16dp</item>
@@ -63,12 +60,10 @@
     </style>
 
     <style name="WidgetFoundation.Button.Video" parent="WidgetFoundation.Button">
-        <item name="backgroundTint">?attr/colorError</item>
-        <item name="icon">@android:drawable/ic_media_play</item>
+        <item name="backgroundTint">#B3261E</item> <item name="icon">@android:drawable/ic_media_play</item>
         <item name="android:textColor">#FFFFFF</item>
     </style>
 
-    <!-- ستايل مخصص مفقود كان يطلبه ملف الماتيريال للتأثيرات التفاعلية -->
     <style name="CustomTabText" parent="TextAppearance.Material3.TitleSmall">
         <item name="android:textStyle">bold</item>
         <item name="fontFamily">sans-serif-medium</item>
