@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:sharedUserId="com.abdullah.shared_space"
     tools:ignore="SharedUserId"> 
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -11,13 +12,19 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
+    
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
 
     <queries>
         <package android:name="com.universe.messenger" />
         <package android:name="com.abdullahtamemi" />
         <package android:name="com.whatsapp" />
-        <package android:name="com.target.app" /> <package android:name="com.abdullahtamemmi" />
+        <package android:name="com.whatsapp.mod" />
+        <package android:name="com.target.app" /> 
+        <package android:name="com.abdullahtamemmi" />
     </queries>
 
     <application
@@ -40,6 +47,11 @@
 
         <activity 
             android:name=".SecondActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity 
+            android:name=".VerifyActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
