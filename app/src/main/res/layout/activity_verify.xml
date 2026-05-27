@@ -102,13 +102,27 @@
 
             <ProgressBar
                 android:id="@+id/verifyProgressBar"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:layout_gravity="center"
                 android:visibility="gone"
-                android:indeterminateTint="#FFFFFF"
+                android:indeterminateTint="#6750A4"
                 tools:visibility="visible" />
         </FrameLayout>
+
+        <TextView
+            android:id="@+id/txtWaitStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="يرجى الانتظار حتى إكمال عملية الفحص... ⏳"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#625B71"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
+            android:visibility="gone"
+            tools:visibility="visible" />
 
         <TextView
             android:layout_width="wrap_content"
