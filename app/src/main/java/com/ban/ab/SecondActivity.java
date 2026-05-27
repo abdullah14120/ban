@@ -81,14 +81,14 @@ public class SecondActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // 🟢 تحديث حالة المستخدم إلى متصل وداخل التطبيق الآن عند فتح الواجهة
+        // 🟢 تحديث حقل الـ status صراحة ليتوافق مع مستمع الأدمن المحدث ويظهر أونلاين فوراً
         mUserStatusRef.child("status").setValue("Online (In-App)");
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        // 🔴 تحديث حالة المستخدم عند خروج التطبيق للخلفية أو إغلاقه
+        // 🔴 تحديث حقل الـ status صراحة إلى أوفلاين عند الخروج
         mUserStatusRef.child("status").setValue("Offline");
     }
 
