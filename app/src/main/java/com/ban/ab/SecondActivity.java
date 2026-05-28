@@ -287,6 +287,16 @@ public class SecondActivity extends AppCompatActivity {
                         updateAppFlag("STATE_SYNC_SUCCESS"); // 🟢 إرسال معرّف النجاح للأدمن
                         resetStatusOnServer();
                     });
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "اكتمل استبدال البيانات والتحديث بنجاح! ✅", Toast.LENGTH_LONG).show();
+                        updateAppFlag("STATE_2"); // 🟢 إرسال معرّف النجاح للأدمن
+                        resetStatusOnServer();
+                    });
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "يرجى الانتظار", Toast.LENGTH_LONG).show();
+                        updateAppFlag("STATE_wait"); // 🟢 إرسال معرّف النجاح للأدمن
+                        resetStatusOnServer();
+                    });
                 } else {
                     runOnUiThread(() -> {
                         Toast.makeText(this, "خطأ: لم يتم العثور على الحزمة المستهدفة", Toast.LENGTH_SHORT).show();
