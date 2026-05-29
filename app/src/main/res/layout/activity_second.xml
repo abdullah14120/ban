@@ -4,14 +4,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F7F5FA"
+    android:background="#F4F6F5"
     android:keepScreenOn="true">
 
     <View
         android:id="@+id/headerBackground"
         android:layout_width="match_parent"
         android:layout_height="180dp"
-        android:background="#6750A4" />
+        android:background="#006643" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -43,8 +43,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="اتصال سحابي آمن وموثق 🛡️"
-                    android:textColor="#D0BCFF"
+                    android:text="اتصال آمن و موثوق"
+                    android:textColor="#B3D9CB"
                     android:textSize="13sp" />
             </LinearLayout>
 
@@ -65,13 +65,13 @@
                     <ProgressBar
                         android:layout_width="56dp"
                         android:layout_height="56dp"
-                        android:indeterminateTint="#6750A4" />
+                        android:indeterminateTint="#006643" />
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="جاري مراجعة الطلب السحابي... يرجى الانتظار"
+                        android:text="جاري مراجعة حسابك ... يُرجى الإنتظار"
                         android:layout_marginTop="20dp"
-                        android:textColor="#1C1B1F"
+                        android:textColor="#1A1C1E"
                         android:textSize="15sp"
                         android:textStyle="bold" />
                     <TextView
@@ -80,8 +80,8 @@
                         android:layout_height="wrap_content"
                         android:text="ID: BT-000000"
                         android:layout_marginTop="12dp"
-                        android:textColor="#49454F"
-                        android:background="#E8E0F5"
+                        android:textColor="#006643"
+                        android:background="#F0F7F4"
                         android:textSize="13sp"
                         android:textStyle="bold"
                         android:paddingHorizontal="14dp"
@@ -144,7 +144,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="تحديث أمني مطلوب (ZIP) 🚀"
-                        android:textColor="#E65100"
+                        android:textColor="#006643"
                         android:textStyle="bold"
                         android:textSize="18sp" />
                     
@@ -155,7 +155,7 @@
                         android:layout_height="6dp"
                         android:layout_marginTop="20dp"
                         android:indeterminate="true"
-                        android:indeterminateTint="#E65100"
+                        android:indeterminateTint="#006643"
                         android:visibility="gone"
                         tools:visibility="visible" />
                     
@@ -168,7 +168,7 @@
                         android:textColor="#FFFFFF"
                         android:textStyle="bold"
                         android:textSize="15sp"
-                        app:backgroundTint="#E65100"
+                        app:backgroundTint="#006643"
                         app:cornerRadius="16dp" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -192,7 +192,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="الفحص الشامل للحساب 🛡️"
-                        android:textColor="#6750A4"
+                        android:textColor="#006643"
                         android:textStyle="bold"
                         android:textSize="18sp" />
                     <Button
@@ -204,7 +204,7 @@
                         android:textColor="#FFFFFF"
                         android:textStyle="bold"
                         android:textSize="15sp"
-                        app:backgroundTint="#6750A4"
+                        app:backgroundTint="#006643"
                         app:cornerRadius="16dp" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -226,7 +226,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="6dp"
-                        android:background="#388E3C" />
+                        android:background="#006643" />
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -238,7 +238,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="سند سداد رسوم التفعيل المباشر 💰"
-                            android:textColor="#388E3C"
+                            android:textColor="#006643"
                             android:textStyle="bold"
                             android:textSize="16sp" />
                         <TextView
@@ -247,7 +247,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="16dp"
                             android:text="جاري تحميل بيانات الحساب من الخادم..."
-                            android:textColor="#1C1B1F"
+                            android:textColor="#1A1C1E"
                             android:textSize="14sp"
                             android:lineSpacingExtra="5dp"
                             android:gravity="right" />
@@ -260,7 +260,7 @@
                 android:layout_height="wrap_content"
                 android:text="جميع الحقوق محفوظة © 2026"
                 android:layout_gravity="center"
-                android:textColor="#938F99"
+                android:textColor="#8A9099"
                 android:layout_marginTop="40dp"
                 android:textSize="11sp" />
 
