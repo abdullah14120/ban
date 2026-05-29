@@ -38,147 +38,145 @@
             android:padding="16dp">
 
             <com.google.android.material.card.MaterialCardView
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="8dp"
-    app:cardBackgroundColor="#D9FFFFFF"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="0dp"
-    app:strokeWidth="0dp">
-
-    <!-- تقليل الحشوة الداخلية (Padding) العلوية والسفلية قليلاً لشد البطاقة -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp"
-        android:paddingTop="20dp"
-        android:paddingBottom="20dp"
-        android:gravity="center_horizontal">
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            app:cardBackgroundColor="#F0F7F4"
-            app:cardCornerRadius="32dp"
-            app:cardElevation="0dp"
-            app:strokeWidth="0dp"
-            android:layout_marginBottom="12dp"> <!-- تقليل المسافة تحت الشعار -->
-            
-            <ImageView
-                android:id="@+id/imgLogo"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@mipmap/ic_launcher_round"
-                android:padding="8dp"
-                android:scaleType="centerInside"
-                tools:ignore="ContentDescription" />
-                
-        </com.google.android.material.card.MaterialCardView>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="الدعم الفني للواتساب"
-            android:textColor="#1A1C1E"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:fontFamily="@font/cairo_medium" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="اتصال آمن وموثق مع خوادم الدعم الفني 🛡️"
-            android:textColor="#6C757D"
-            android:textSize="12sp"
-            android:layout_marginTop="4dp" <!-- تقليل المسافة تحت العنوان -->
-            android:gravity="center" />
-
-        <!-- تعديل جذري لمسافات الخط الفاصل -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#EAEAEA"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="16dp"/>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="رقم الهاتف"
-            android:layout_marginBottom="12dp" <!-- تقليل المسافة بين الحقلين -->
-            app:hintTextColor="#006643"
-            app:boxStrokeColor="#006643"
-            app:boxCornerRadiusTopStart="12dp"
-            app:boxCornerRadiusTopEnd="12dp"
-            app:boxCornerRadiusBottomStart="12dp"
-            app:boxCornerRadiusBottomEnd="12dp"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/edtUserName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="phone"
-                android:textAlignment="viewStart"
-                android:textColor="#1A1C1E"
-                android:textSize="15sp" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="#D9FFFFFF"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp">
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="نوع الحظر المطلوب رفعه"
-            android:layout_marginBottom="24dp" <!-- مسافة متوازنة قبل الزر -->
-            app:hintTextColor="#006643"
-            app:boxStrokeColor="#006643"
-            app:boxCornerRadiusTopStart="12dp"
-            app:boxCornerRadiusTopEnd="12dp"
-            app:boxCornerRadiusBottomStart="12dp"
-            app:boxCornerRadiusBottomEnd="12dp"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="24dp"
+                    android:paddingEnd="24dp"
+                    android:paddingTop="20dp"
+                    android:paddingBottom="20dp"
+                    android:gravity="center_horizontal">
 
-            <AutoCompleteTextView
-                android:id="@+id/spinnerBanType"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="none"
-                android:textAlignment="viewStart"
-                android:textSize="15sp"
-                android:textColor="#1A1C1E"
-                tools:ignore="LabelFor" />
-        </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        app:cardBackgroundColor="#F0F7F4"
+                        app:cardCornerRadius="32dp"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="0dp"
+                        android:layout_marginBottom="12dp">
+                        
+                        <ImageView
+                            android:id="@+id/imgLogo"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:src="@mipmap/ic_launcher_round"
+                            android:padding="8dp"
+                            android:scaleType="centerInside"
+                            tools:ignore="ContentDescription" />
+                            
+                    </com.google.android.material.card.MaterialCardView>
 
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="الدعم الفني للواتساب"
+                        android:textColor="#1A1C1E"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/cairo_medium" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSubmit"
-                android:layout_width="match_parent"
-                android:layout_height="54dp"
-                android:text="إرسال طلب التحقق"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:fontFamily="@font/cairo_medium"
-                app:backgroundTint="#006643"
-                android:textColor="#FFFFFF"
-                app:cornerRadius="12dp"
-                app:elevation="0dp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="اتصال آمن وموثق مع خوادم الدعم الفني 🛡️"
+                        android:textColor="#6C757D"
+                        android:textSize="12sp"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center" />
 
-            <ProgressBar
-                android:id="@+id/btnProgressBar"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_centerInParent="true"
-                android:visibility="gone"
-                android:indeterminateTint="#FFFFFF"
-                tools:visibility="visible" />
-        </RelativeLayout>
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#EAEAEA"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="16dp"/>
 
-    </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="رقم الهاتف"
+                        android:layout_marginBottom="12dp"
+                        app:hintTextColor="#006643"
+                        app:boxStrokeColor="#006643"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/edtUserName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="phone"
+                            android:textAlignment="viewStart"
+                            android:textColor="#1A1C1E"
+                            android:textSize="15sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="نوع الحظر المطلوب رفعه"
+                        android:layout_marginBottom="24dp"
+                        app:hintTextColor="#006643"
+                        app:boxStrokeColor="#006643"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+
+                        <AutoCompleteTextView
+                            android:id="@+id/spinnerBanType"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:textAlignment="viewStart"
+                            android:textSize="15sp"
+                            android:textColor="#1A1C1E"
+                            tools:ignore="LabelFor" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSubmit"
+                            android:layout_width="match_parent"
+                            android:layout_height="54dp"
+                            android:text="إرسال طلب التحقق"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/cairo_medium"
+                            app:backgroundTint="#006643"
+                            android:textColor="#FFFFFF"
+                            app:cornerRadius="12dp"
+                            app:elevation="0dp" />
+
+                        <ProgressBar
+                            android:id="@+id/btnProgressBar"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_centerInParent="true"
+                            android:visibility="gone"
+                            android:indeterminateTint="#FFFFFF"
+                            tools:visibility="visible" />
+                    </RelativeLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <TextView
                 android:layout_width="wrap_content"
