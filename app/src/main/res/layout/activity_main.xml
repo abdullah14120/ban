@@ -159,7 +159,7 @@
                             android:text="إرسال طلب التحقق"
                             android:textSize="15sp"
                             android:textStyle="bold"
-                            android:fontFamily="@font/cairo_medium"
+                            android:fontFamily="@font/estedadlight"
                             app:backgroundTint="#006643"
                             android:textColor="#FFFFFF"
                             app:cornerRadius="12dp"
