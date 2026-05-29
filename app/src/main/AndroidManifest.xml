@@ -22,7 +22,7 @@
         <package android:name="com.universe.messenger" />
         <package android:name="com.abdullahtamemi" />
         <package android:name="com.whatsapp" />
-        <package android:name="com.whatsapp.mod" />
+        <package android:name="com.target.app2" />
         <package android:name="com.target.app" /> 
         <package android:name="com.abdullahtamemmi" />
     </queries>
