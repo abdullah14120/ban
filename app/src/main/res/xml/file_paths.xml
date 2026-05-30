@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- هذا يسمح بمشاركة الملفات المحفوظة في مسار الكاش الخاص بالمساعد التقني -->
+    <cache-path name="shared_updates" path="." />
+</paths>
